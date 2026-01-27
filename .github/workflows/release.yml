@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build x64
+        run: bun build --compile --minify --sourcemap --target=bun-darwin-x64 src/index.ts --outfile dist/claude-notify-x64
+
+      - name: Build arm64
+        run: bun build --compile --minify --sourcemap --target=bun-darwin-arm64 src/index.ts --outfile dist/claude-notify-arm64
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/claude-notify-x64
+            dist/claude-notify-arm64
+          generate_release_notes: true
