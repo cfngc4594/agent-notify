@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/cfngc4594/agent-notify/compare/v2.0.0...v2.1.0) (2026-01-28)
+
+
+### Features
+
+* **install:** add curl install script to bypass macOS Gatekeeper ([3835902](https://github.com/cfngc4594/agent-notify/commit/38359022a57f81db6f1a85b4f8aff26396c777f9))
+
 ## [2.0.0](https://github.com/cfngc4594/claude-notify/compare/v1.3.0...v2.0.0) (2026-01-28)
 
 
