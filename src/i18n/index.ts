@@ -16,6 +16,19 @@ const messages = {
     commentWaiting: "Claude waiting for input sound",
     commentPermission: "Claude permission request sound",
 
+    // Notifications
+    notifyTitleDone: "Claude Code",
+    notifyMsgDone: "Task completed",
+    notifyTitleWaiting: "Claude Code",
+    notifyMsgWaiting: "Waiting for your input",
+    notifyTitlePermission: "Claude Code",
+    notifyMsgPermission: "Permission required",
+
+    // Voice (say command)
+    sayDone: "Task completed",
+    sayWaiting: "Waiting for input",
+    sayPermission: "Permission required",
+
     // Spinner
     checkingSettings: "Checking Claude settings.json...",
     readFailed: "Failed to read config",
@@ -55,6 +68,19 @@ const messages = {
     commentDone: "Claude 任务完成提示音",
     commentWaiting: "Claude 等待用户输入提示音",
     commentPermission: "Claude 请求权限提示音",
+
+    // Notifications
+    notifyTitleDone: "Claude Code",
+    notifyMsgDone: "任务已完成",
+    notifyTitleWaiting: "Claude Code",
+    notifyMsgWaiting: "等待你的输入",
+    notifyTitlePermission: "Claude Code",
+    notifyMsgPermission: "需要授权操作",
+
+    // Voice (say command)
+    sayDone: "任务完成",
+    sayWaiting: "等待输入",
+    sayPermission: "需要权限",
 
     // Spinner
     checkingSettings: "检查 Claude settings.json...",
