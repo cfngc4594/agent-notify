@@ -1,6 +1,13 @@
 import type { SoundName } from "../types";
 import { t } from "../i18n";
 
+/** Feature toggle options */
+export interface FeatureOptions {
+  sound: boolean;
+  notification: boolean;
+  voice: boolean;
+}
+
 /** Script config metadata */
 interface ScriptConfig {
   readonly name: string;
@@ -76,31 +83,46 @@ export const SCRIPT_NAMES = {
 export const SCRIPT_NAME_LIST: readonly ScriptName[] =
   Object.values(SCRIPT_NAMES);
 
-/** Generate script content with sound + macOS notification + voice */
+/** Generate script content with optional sound + macOS notification + voice */
 export function createScript(
   sound: SoundName,
   comment: string,
   notifyTitle: string,
   notifyMsg: string,
-  sayText: string
+  sayText: string,
+  options: FeatureOptions
 ): string {
-  return `#!/usr/bin/env bash
-# ${comment}
+  const lines: string[] = [
+    "#!/usr/bin/env bash",
+    `# ${comment}`,
+    "",
+  ];
 
-# Play system sound
-afplay /System/Library/Sounds/${sound}.aiff &
+  if (options.sound) {
+    lines.push("# Play system sound");
+    lines.push(`afplay /System/Library/Sounds/${sound}.aiff &`);
+    lines.push("");
+  }
 
-# Show macOS notification
-osascript -e 'display notification "${notifyMsg}" with title "${notifyTitle}"'
+  if (options.notification) {
+    lines.push("# Show macOS notification");
+    lines.push(`osascript -e 'display notification "${notifyMsg}" with title "${notifyTitle}"'`);
+    lines.push("");
+  }
 
-# Voice announcement
-say "${sayText}"
-`;
+  if (options.voice) {
+    lines.push("# Voice announcement");
+    lines.push(`say "${sayText}"`);
+    lines.push("");
+  }
+
+  return lines.join("\n");
 }
 
 /** Generate all scripts from sound config */
 export function generateScripts(
-  sounds: readonly SoundName[]
+  sounds: readonly SoundName[],
+  options: FeatureOptions
 ): Record<ScriptName, string> {
   const configs = getScriptConfigs();
   return configs.reduce((acc, config, i) => {
@@ -109,7 +131,8 @@ export function generateScripts(
       config.comment,
       config.notifyTitle,
       config.notifyMsg,
-      config.sayText
+      config.sayText,
+      options
     );
     return acc;
   }, {} as Record<ScriptName, string>);

@@ -53,6 +53,13 @@ const messages = {
     // Sound select
     previewHint: "(Space to preview, Enter to select)",
     default: "default",
+
+    // Feature toggles
+    featureToggle: "Select features to enable",
+    featureSound: "Sound effects",
+    featureNotification: "macOS notifications",
+    featureVoice: "Voice announcements",
+    featureRequired: "Please select at least one feature",
   },
   zh: {
     // Main flow
@@ -106,6 +113,13 @@ const messages = {
     // Sound select
     previewHint: "(空格试听, 回车选择)",
     default: "默认",
+
+    // Feature toggles
+    featureToggle: "选择要启用的功能",
+    featureSound: "音效",
+    featureNotification: "macOS 通知",
+    featureVoice: "语音播报",
+    featureRequired: "请至少选择一项功能",
   },
 } as const;
 

@@ -2,7 +2,7 @@ import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { getScriptConfigs, generateScripts } from "./config/scripts";
+import { getScriptConfigs, generateScripts, type FeatureOptions } from "./config/scripts";
 import { mergeHooksConfig } from "./config/hooks";
 import {
   readSettingsSafe,
@@ -55,24 +55,59 @@ async function main() {
   const binDir = toAbsolutePath(binDirInput);
   const binDirDisplay = toDisplayPath(binDir);
 
-  // 2. Select sounds (with preview)
+  // 2. Select features to enable
+  const features = await p.multiselect({
+    message: t("featureToggle"),
+    options: [
+      { value: "sound", label: t("featureSound"), hint: "afplay" },
+      { value: "notification", label: t("featureNotification"), hint: "osascript" },
+      { value: "voice", label: t("featureVoice"), hint: "say" },
+    ],
+    initialValues: ["sound", "notification"],
+    required: true,
+  });
+
+  if (p.isCancel(features)) {
+    p.cancel(t("canceled"));
+    process.exit(0);
+  }
+
+  if (features.length === 0) {
+    p.cancel(t("featureRequired"));
+    process.exit(0);
+  }
+
+  const featureOptions: FeatureOptions = {
+    sound: features.includes("sound"),
+    notification: features.includes("notification"),
+    voice: features.includes("voice"),
+  };
+
+  // 3. Select sounds (with preview) - only if sound feature is enabled
   const sounds: SoundName[] = [];
   const scriptConfigs = getScriptConfigs();
 
-  for (const [, config] of scriptConfigs.entries()) {
-    console.log();
-    const sound = await selectSoundWithPreview(
-      config.promptMessage,
-      config.defaultSound
-    );
-    if (!sound) {
-      p.cancel(t("canceled"));
-      process.exit(0);
+  if (featureOptions.sound) {
+    for (const [, config] of scriptConfigs.entries()) {
+      console.log();
+      const sound = await selectSoundWithPreview(
+        config.promptMessage,
+        config.defaultSound
+      );
+      if (!sound) {
+        p.cancel(t("canceled"));
+        process.exit(0);
+      }
+      sounds.push(sound);
     }
-    sounds.push(sound);
+  } else {
+    // Use default sounds when sound feature is disabled
+    for (const config of scriptConfigs) {
+      sounds.push(config.defaultSound);
+    }
   }
 
-  // 3. Install
+  // 4. Install
   const spinner = p.spinner();
   spinner.start(t("checkingSettings"));
   const settingsResult = await readSettingsSafe();
@@ -98,7 +133,7 @@ async function main() {
   spinner.stop(t("dirReady"));
 
   spinner.start(t("installingScripts"));
-  const scripts = generateScripts(sounds);
+  const scripts = generateScripts(sounds, featureOptions);
 
   await Promise.all(
     Object.entries(scripts).map(([name, content]) =>
@@ -113,7 +148,7 @@ async function main() {
   await writeSettings(updatedSettings);
   spinner.stop(t("settingsUpdated"));
 
-  // 4. Show results
+  // 5. Show results
   p.note(
     [
       pc.green(t("installedScripts")),
