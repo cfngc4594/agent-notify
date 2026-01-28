@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/cfngc4594/agent-notify/compare/v2.2.0...v2.3.0) (2026-01-28)
+
+
+### Features
+
+* **cli:** add Cursor as independent platform ([6f6a7d7](https://github.com/cfngc4594/agent-notify/commit/6f6a7d7b0bfd31a7e8683e28472c9e0f353fe9e9))
+
 ## [2.2.0](https://github.com/cfngc4594/agent-notify/compare/v2.1.0...v2.2.0) (2026-01-28)
 
 
