@@ -39,9 +39,9 @@ export function isValidSettings(value: unknown): value is Settings {
 // Platform types
 // ============================================
 
-export type Platform = "claudeCode" | "codex";
+export type Platform = "claudeCode" | "cursor" | "codex";
 
-export const PLATFORMS = ["claudeCode", "codex"] as const;
+export const PLATFORMS = ["claudeCode", "cursor", "codex"] as const;
 
 // ============================================
 // Sound config

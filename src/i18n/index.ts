@@ -67,16 +67,32 @@ const messages = {
     ntfyUrlPlaceholder: "https://ntfy.sh or http://localhost:80",
     ntfyUrlEmpty: "URL cannot be empty",
     ntfyTopic: "ntfy topic name",
-    ntfyTopicPlaceholder: "claude-notify",
+    ntfyTopicPlaceholder: "agent-notify",
     ntfyTopicEmpty: "Topic cannot be empty",
 
     // Platform selection
     platformSelect: "Select target platform (Space to toggle, Enter to confirm)",
-    platformClaudeCode: "Claude Code / Cursor",
+    platformClaudeCode: "Claude Code",
     platformClaudeCodeHint: "hooks in ~/.claude/settings.json",
+    platformCursor: "Cursor",
+    platformCursorHint: "hooks in ~/.cursor/hooks.json",
     platformCodex: "OpenAI Codex",
     platformCodexHint: "notify in ~/.codex/config.toml",
     platformRequired: "Please select at least one platform",
+
+    // Cursor specific
+    cursorCommentDone: "Cursor task completion sound",
+    cursorCommentWaiting: "Cursor waiting for input sound",
+    cursorCommentPermission: "Cursor permission request sound",
+    cursorNotifyTitleDone: "Cursor",
+    cursorNotifyMsgDone: "Task completed",
+    cursorNotifyTitleWaiting: "Cursor",
+    cursorNotifyMsgWaiting: "Waiting for your input",
+    cursorNotifyTitlePermission: "Cursor",
+    cursorNotifyMsgPermission: "Permission required",
+    cursorSayDone: "Cursor task completed",
+    cursorSayWaiting: "Cursor waiting for input",
+    cursorSayPermission: "Cursor permission required",
 
     // Codex specific
     codexScriptName: "codex-notify.sh",
@@ -106,6 +122,7 @@ const messages = {
     // Config diff
     configPreview: "Configuration preview",
     claudeSettingsPath: "~/.claude/settings.json",
+    cursorHooksPath: "~/.cursor/hooks.json",
     codexConfigPath: "~/.codex/config.toml",
     confirmChanges: "Apply these changes?",
     confirmYes: "Yes, apply changes",
@@ -114,6 +131,15 @@ const messages = {
     changesCanceled: "Changes canceled",
     noChangesNeeded: "(already configured)",
     allConfigsUpToDate: "All configurations are already up to date!",
+
+    // Cursor config
+    updatingCursor: "Updating Cursor hooks.json...",
+    cursorUpdated: "Cursor config updated",
+    cursorConfiguredHooks: "✓ Configured Cursor hooks:",
+
+    // Dual platform warning
+    dualPlatformWarning: "You selected both Claude Code and Cursor. To avoid duplicate notifications:",
+    dualPlatformHint: "Disable \"Include third-party skills\" in Cursor Settings → Rules, Skills, Subagents",
   },
   zh: {
     // Main flow
@@ -181,16 +207,32 @@ const messages = {
     ntfyUrlPlaceholder: "https://ntfy.sh 或 http://localhost:80",
     ntfyUrlEmpty: "地址不能为空",
     ntfyTopic: "ntfy 主题名称",
-    ntfyTopicPlaceholder: "claude-notify",
+    ntfyTopicPlaceholder: "agent-notify",
     ntfyTopicEmpty: "主题不能为空",
 
     // Platform selection
     platformSelect: "选择目标平台 (空格切换, 回车确认)",
-    platformClaudeCode: "Claude Code / Cursor",
+    platformClaudeCode: "Claude Code",
     platformClaudeCodeHint: "hooks 配置在 ~/.claude/settings.json",
+    platformCursor: "Cursor",
+    platformCursorHint: "hooks 配置在 ~/.cursor/hooks.json",
     platformCodex: "OpenAI Codex",
     platformCodexHint: "notify 配置在 ~/.codex/config.toml",
     platformRequired: "请至少选择一个平台",
+
+    // Cursor specific
+    cursorCommentDone: "Cursor 任务完成提示音",
+    cursorCommentWaiting: "Cursor 等待用户输入提示音",
+    cursorCommentPermission: "Cursor 请求权限提示音",
+    cursorNotifyTitleDone: "Cursor",
+    cursorNotifyMsgDone: "任务已完成",
+    cursorNotifyTitleWaiting: "Cursor",
+    cursorNotifyMsgWaiting: "等待你的输入",
+    cursorNotifyTitlePermission: "Cursor",
+    cursorNotifyMsgPermission: "需要授权操作",
+    cursorSayDone: "Cursor 任务完成",
+    cursorSayWaiting: "Cursor 等待输入",
+    cursorSayPermission: "Cursor 需要权限",
 
     // Codex specific
     codexScriptName: "codex-notify.sh",
@@ -220,6 +262,7 @@ const messages = {
     // Config diff
     configPreview: "配置预览",
     claudeSettingsPath: "~/.claude/settings.json",
+    cursorHooksPath: "~/.cursor/hooks.json",
     codexConfigPath: "~/.codex/config.toml",
     confirmChanges: "是否应用这些更改？",
     confirmYes: "是，应用更改",
@@ -228,6 +271,15 @@ const messages = {
     changesCanceled: "更改已取消",
     noChangesNeeded: "（已配置）",
     allConfigsUpToDate: "所有配置已是最新！",
+
+    // Cursor config
+    updatingCursor: "更新 Cursor hooks.json...",
+    cursorUpdated: "Cursor 配置已更新",
+    cursorConfiguredHooks: "✓ 已配置 Cursor hooks:",
+
+    // Dual platform warning
+    dualPlatformWarning: "你同时选择了 Claude Code 和 Cursor。为避免收到重复通知：",
+    dualPlatformHint: "请在 Cursor Settings → Rules, Skills, Subagents 中关闭 \"Include third-party skills\"",
   },
 } as const;
 

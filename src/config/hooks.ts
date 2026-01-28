@@ -1,17 +1,29 @@
 import type { HooksConfig, HookMatcher } from "../types";
-import { SCRIPT_NAMES, SCRIPT_NAME_LIST } from "./scripts";
+import { CLAUDE_SCRIPT_NAMES, CLAUDE_SCRIPT_NAME_LIST, CURSOR_SCRIPT_NAMES, CURSOR_SCRIPT_NAME_LIST } from "./scripts";
 import { toDisplayPath } from "../utils/path";
 
-/** Get hook command path for script (uses ~ format for Claude) */
+/** Get hook command path for script (uses ~ format) */
 function getScriptCommand(binDir: string, name: string): string {
   return `${toDisplayPath(binDir)}/${name}`;
 }
 
-/** Get script name if this is our hook */
-function getOurScriptName(hook: Record<string, unknown>): string | null {
+/** Get Claude script name if this is our hook */
+function getOurClaudeScriptName(hook: Record<string, unknown>): string | null {
   const command = hook.command;
   if (typeof command !== "string") return null;
-  return SCRIPT_NAME_LIST.find((name) => command.endsWith(name)) ?? null;
+  return CLAUDE_SCRIPT_NAME_LIST.find((name) => command.endsWith(name)) ?? null;
+}
+
+/** Get Cursor script name if this is our hook */
+function getOurCursorScriptName(hook: Record<string, unknown>): string | null {
+  const command = hook.command;
+  if (typeof command !== "string") return null;
+  return CURSOR_SCRIPT_NAME_LIST.find((name) => command.endsWith(name)) ?? null;
+}
+
+/** Get script name if this is our hook (checks both Claude and Cursor) */
+function getOurScriptName(hook: Record<string, unknown>): string | null {
+  return getOurClaudeScriptName(hook) ?? getOurCursorScriptName(hook);
 }
 
 /**
@@ -115,15 +127,15 @@ function mergeObjectInOrder<T extends Record<string, unknown>>(
 }
 
 /**
- * Smart merge hooks config
+ * Smart merge Claude hooks config
  * - Preserve user hooks and their positions
- * - Update/add managed hooks
+ * - Update/add managed hooks (only Stop event)
  */
 export function mergeHooksConfig(
   existing: HooksConfig | undefined,
   binDir: string
 ): HooksConfig {
-  const ourConfig = createHooksConfig(binDir);
+  const ourConfig = createClaudeHooksConfig(binDir);
 
   if (!existing) {
     return ourConfig;
@@ -131,17 +143,13 @@ export function mergeHooksConfig(
 
   const updates: Partial<HooksConfig> = {
     Stop: mergeMatchers(existing.Stop, ourConfig.Stop ?? []),
-    Notification: mergeMatchers(
-      existing.Notification,
-      ourConfig.Notification ?? []
-    ),
   };
 
   return mergeObjectInOrder(existing, updates);
 }
 
-/** Create hooks config for our managed hooks */
-function createHooksConfig(binDir: string): HooksConfig {
+/** Create Claude hooks config for our managed hooks (only Stop event) */
+function createClaudeHooksConfig(binDir: string): HooksConfig {
   return {
     Stop: [
       {
@@ -149,29 +157,115 @@ function createHooksConfig(binDir: string): HooksConfig {
         hooks: [
           {
             type: "command",
-            command: getScriptCommand(binDir, SCRIPT_NAMES.done),
+            command: getScriptCommand(binDir, CLAUDE_SCRIPT_NAMES.done),
           },
         ],
       },
     ],
-    Notification: [
+  };
+}
+
+// ============================================
+// Cursor hooks config
+// ============================================
+
+/** Cursor hook entry (simpler format than Claude) */
+export type CursorHookEntry = {
+  command: string;
+  matcher?: string;
+  [key: string]: unknown;
+};
+
+/** Cursor hooks config structure */
+export type CursorHooksStructure = {
+  stop?: CursorHookEntry[];
+  [key: string]: CursorHookEntry[] | undefined;
+};
+
+/**
+ * Merge Cursor hooks array
+ * - Our hooks: update in place if exists, append if not
+ * - User hooks: keep in original position
+ */
+function mergeCursorHooksArray(
+  existingHooks: CursorHookEntry[],
+  newHooks: CursorHookEntry[]
+): CursorHookEntry[] {
+  const newHookMap = new Map<string, CursorHookEntry>();
+  for (const hook of newHooks) {
+    const scriptName = getOurCursorScriptName(hook);
+    if (scriptName) newHookMap.set(scriptName, hook);
+  }
+
+  const processedScripts = new Set<string>();
+  const result: CursorHookEntry[] = [];
+
+  // Update our hooks in place
+  for (const hook of existingHooks) {
+    const scriptName = getOurCursorScriptName(hook);
+    if (scriptName && newHookMap.has(scriptName)) {
+      result.push(newHookMap.get(scriptName)!);
+      processedScripts.add(scriptName);
+    } else {
+      result.push(hook);
+    }
+  }
+
+  // Append new hooks
+  for (const hook of newHooks) {
+    const scriptName = getOurCursorScriptName(hook);
+    if (scriptName && !processedScripts.has(scriptName)) {
+      result.push(hook);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Smart merge Cursor hooks config
+ * - Preserve user hooks and their positions
+ * - Update/add managed hooks
+ */
+export function mergeCursorHooksConfig(
+  existing: CursorHooksStructure | undefined,
+  binDir: string
+): CursorHooksStructure {
+  const ourConfig = createCursorHooksConfig(binDir);
+
+  if (!existing) {
+    return ourConfig;
+  }
+
+  const result: CursorHooksStructure = {};
+  const processedKeys = new Set<string>();
+
+  // Preserve existing key order
+  for (const key of Object.keys(existing)) {
+    if (key === "stop" && ourConfig.stop) {
+      result[key] = mergeCursorHooksArray(existing[key] ?? [], ourConfig.stop);
+    } else {
+      result[key] = existing[key];
+    }
+    processedKeys.add(key);
+  }
+
+  // Add new keys
+  for (const key of Object.keys(ourConfig)) {
+    if (!processedKeys.has(key)) {
+      result[key] = ourConfig[key];
+    }
+  }
+
+  return result;
+}
+
+/** Create Cursor hooks config for our managed hooks */
+function createCursorHooksConfig(binDir: string): CursorHooksStructure {
+  return {
+    stop: [
       {
-        matcher: "idle_prompt",
-        hooks: [
-          {
-            type: "command",
-            command: getScriptCommand(binDir, SCRIPT_NAMES.waiting),
-          },
-        ],
-      },
-      {
-        matcher: "permission_prompt",
-        hooks: [
-          {
-            type: "command",
-            command: getScriptCommand(binDir, SCRIPT_NAMES.permission),
-          },
-        ],
+        command: getScriptCommand(binDir, CURSOR_SCRIPT_NAMES.done),
       },
     ],
   };

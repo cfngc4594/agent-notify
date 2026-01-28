@@ -20,21 +20,15 @@ export interface FeatureOptions {
 interface ScriptConfig {
   readonly name: string;
   readonly defaultSound: SoundName;
-  readonly commentKey: "commentDone" | "commentWaiting" | "commentPermission";
-  readonly promptKey: "soundDone" | "soundWaiting" | "soundPermission";
-  readonly notifyTitleKey:
-    | "notifyTitleDone"
-    | "notifyTitleWaiting"
-    | "notifyTitlePermission";
-  readonly notifyMsgKey:
-    | "notifyMsgDone"
-    | "notifyMsgWaiting"
-    | "notifyMsgPermission";
-  readonly sayKey: "sayDone" | "sayWaiting" | "sayPermission";
+  readonly commentKey: "commentDone" | "cursorCommentDone";
+  readonly promptKey: "soundDone";
+  readonly notifyTitleKey: "notifyTitleDone" | "cursorNotifyTitleDone";
+  readonly notifyMsgKey: "notifyMsgDone" | "cursorNotifyMsgDone";
+  readonly sayKey: "sayDone" | "cursorSayDone";
 }
 
-/** Script config templates */
-const SCRIPT_CONFIG_TEMPLATES = [
+/** Claude Code script config template (only done/stop event) */
+const CLAUDE_SCRIPT_CONFIG_TEMPLATES = [
   {
     name: "claude-done-sound.sh",
     defaultSound: "Glass",
@@ -44,29 +38,24 @@ const SCRIPT_CONFIG_TEMPLATES = [
     notifyMsgKey: "notifyMsgDone",
     sayKey: "sayDone",
   },
+] as const satisfies readonly ScriptConfig[];
+
+/** Cursor script config template (only done/stop event) */
+const CURSOR_SCRIPT_CONFIG_TEMPLATES = [
   {
-    name: "claude-waiting-sound.sh",
-    defaultSound: "Ping",
-    commentKey: "commentWaiting",
-    promptKey: "soundWaiting",
-    notifyTitleKey: "notifyTitleWaiting",
-    notifyMsgKey: "notifyMsgWaiting",
-    sayKey: "sayWaiting",
-  },
-  {
-    name: "claude-permission-sound.sh",
-    defaultSound: "Basso",
-    commentKey: "commentPermission",
-    promptKey: "soundPermission",
-    notifyTitleKey: "notifyTitlePermission",
-    notifyMsgKey: "notifyMsgPermission",
-    sayKey: "sayPermission",
+    name: "cursor-done-sound.sh",
+    defaultSound: "Glass",
+    commentKey: "cursorCommentDone",
+    promptKey: "soundDone",
+    notifyTitleKey: "cursorNotifyTitleDone",
+    notifyMsgKey: "cursorNotifyMsgDone",
+    sayKey: "cursorSayDone",
   },
 ] as const satisfies readonly ScriptConfig[];
 
-/** Get script configs with translations */
-export function getScriptConfigs() {
-  return SCRIPT_CONFIG_TEMPLATES.map((c) => ({
+/** Get Claude script configs with translations */
+export function getClaudeScriptConfigs() {
+  return CLAUDE_SCRIPT_CONFIG_TEMPLATES.map((c) => ({
     name: c.name,
     defaultSound: c.defaultSound,
     comment: t(c.commentKey),
@@ -77,19 +66,54 @@ export function getScriptConfigs() {
   }));
 }
 
-/** Script name type */
-export type ScriptName = (typeof SCRIPT_CONFIG_TEMPLATES)[number]["name"];
+/** Get Cursor script configs with translations */
+export function getCursorScriptConfigs() {
+  return CURSOR_SCRIPT_CONFIG_TEMPLATES.map((c) => ({
+    name: c.name,
+    defaultSound: c.defaultSound,
+    comment: t(c.commentKey),
+    promptMessage: t(c.promptKey),
+    notifyTitle: t(c.notifyTitleKey),
+    notifyMsg: t(c.notifyMsgKey),
+    sayText: t(c.sayKey),
+  }));
+}
 
-/** Script name constants */
-export const SCRIPT_NAMES = {
-  done: SCRIPT_CONFIG_TEMPLATES[0].name,
-  waiting: SCRIPT_CONFIG_TEMPLATES[1].name,
-  permission: SCRIPT_CONFIG_TEMPLATES[2].name,
+/** @deprecated Use getClaudeScriptConfigs instead */
+export const getScriptConfigs = getClaudeScriptConfigs;
+
+/** Claude script name type */
+export type ClaudeScriptName = (typeof CLAUDE_SCRIPT_CONFIG_TEMPLATES)[number]["name"];
+
+/** Cursor script name type */
+export type CursorScriptName = (typeof CURSOR_SCRIPT_CONFIG_TEMPLATES)[number]["name"];
+
+/** Script name type (union) */
+export type ScriptName = ClaudeScriptName | CursorScriptName;
+
+/** Claude script name constants */
+export const CLAUDE_SCRIPT_NAMES = {
+  done: CLAUDE_SCRIPT_CONFIG_TEMPLATES[0].name,
 } as const;
 
-/** Script name list */
-export const SCRIPT_NAME_LIST: readonly ScriptName[] =
-  Object.values(SCRIPT_NAMES);
+/** Cursor script name constants */
+export const CURSOR_SCRIPT_NAMES = {
+  done: CURSOR_SCRIPT_CONFIG_TEMPLATES[0].name,
+} as const;
+
+/** @deprecated Use CLAUDE_SCRIPT_NAMES instead */
+export const SCRIPT_NAMES = CLAUDE_SCRIPT_NAMES;
+
+/** Claude script name list */
+export const CLAUDE_SCRIPT_NAME_LIST: readonly ClaudeScriptName[] =
+  Object.values(CLAUDE_SCRIPT_NAMES);
+
+/** Cursor script name list */
+export const CURSOR_SCRIPT_NAME_LIST: readonly CursorScriptName[] =
+  Object.values(CURSOR_SCRIPT_NAMES);
+
+/** @deprecated Use CLAUDE_SCRIPT_NAME_LIST instead */
+export const SCRIPT_NAME_LIST = CLAUDE_SCRIPT_NAME_LIST;
 
 /** Generate script content with optional sound + macOS notification + voice + ntfy */
 export function createScript(
@@ -135,14 +159,14 @@ export function createScript(
   return lines.join("\n");
 }
 
-/** Generate all scripts from sound config */
-export function generateScripts(
+/** Generate Claude scripts from sound config */
+export function generateClaudeScripts(
   sounds: readonly SoundName[],
   options: FeatureOptions
-): Record<ScriptName, string> {
-  const configs = getScriptConfigs();
+): Record<ClaudeScriptName, string> {
+  const configs = getClaudeScriptConfigs();
   return configs.reduce((acc, config, i) => {
-    acc[config.name as ScriptName] = createScript(
+    acc[config.name as ClaudeScriptName] = createScript(
       sounds[i] ?? config.defaultSound,
       config.comment,
       config.notifyTitle,
@@ -151,8 +175,30 @@ export function generateScripts(
       options
     );
     return acc;
-  }, {} as Record<ScriptName, string>);
+  }, {} as Record<ClaudeScriptName, string>);
 }
+
+/** Generate Cursor scripts from sound config */
+export function generateCursorScripts(
+  sounds: readonly SoundName[],
+  options: FeatureOptions
+): Record<CursorScriptName, string> {
+  const configs = getCursorScriptConfigs();
+  return configs.reduce((acc, config, i) => {
+    acc[config.name as CursorScriptName] = createScript(
+      sounds[i] ?? config.defaultSound,
+      config.comment,
+      config.notifyTitle,
+      config.notifyMsg,
+      config.sayText,
+      options
+    );
+    return acc;
+  }, {} as Record<CursorScriptName, string>);
+}
+
+/** @deprecated Use generateClaudeScripts instead */
+export const generateScripts = generateClaudeScripts;
 
 // ============================================
 // Codex script generation

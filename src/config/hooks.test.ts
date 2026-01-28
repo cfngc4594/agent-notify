@@ -10,7 +10,6 @@ describe("mergeHooksConfig", () => {
       const result = mergeHooksConfig(undefined, testBinDir);
 
       expect(result.Stop).toBeDefined();
-      expect(result.Notification).toBeDefined();
       expect(result.Stop?.[0]?.hooks?.[0]?.command).toContain("claude-done-sound.sh");
     });
 
@@ -18,7 +17,6 @@ describe("mergeHooksConfig", () => {
       const result = mergeHooksConfig({} as HooksConfig, testBinDir);
 
       expect(result.Stop).toBeDefined();
-      expect(result.Notification).toBeDefined();
     });
   });
 
@@ -89,7 +87,7 @@ describe("mergeHooksConfig", () => {
       expect(result.PostToolUse).toEqual(existing.PostToolUse);
     });
 
-    test("preserves user's idle_prompt hooks alongside ours", () => {
+    test("preserves user's Notification hooks unchanged (we no longer modify Notification)", () => {
       const existing: HooksConfig = {
         Notification: [
           {
@@ -103,14 +101,8 @@ describe("mergeHooksConfig", () => {
 
       const result = mergeHooksConfig(existing, testBinDir);
 
-      // Find idle_prompt matcher
-      const idleMatcher = result.Notification?.find(m => m.matcher === "idle_prompt");
-      expect(idleMatcher).toBeDefined();
-
-      // Should have both user's hook and our hook
-      const commands = idleMatcher?.hooks?.map(h => h.command as string | undefined) || [];
-      expect(commands).toContain("/user/idle-handler.sh");
-      expect(commands.some(c => c?.includes("claude-waiting-sound.sh"))).toBe(true);
+      // User's Notification hooks should be preserved unchanged
+      expect(result.Notification).toEqual(existing.Notification);
     });
   });
 
@@ -185,9 +177,8 @@ describe("mergeHooksConfig", () => {
       
       // PreToolUse should be first (existing)
       expect(keys[0]).toBe("PreToolUse");
-      // Stop and Notification should be added after
+      // Stop should be added after (we only add Stop now, not Notification)
       expect(keys).toContain("Stop");
-      expect(keys).toContain("Notification");
     });
   });
 
@@ -222,24 +213,17 @@ describe("mergeHooksConfig", () => {
       // Verify PostToolUse is unchanged
       expect(result.PostToolUse).toEqual(existing.PostToolUse);
 
-      // Verify user's Stop hooks are preserved
+      // Verify user's Stop hooks are preserved alongside ours
       const stopCommands = result.Stop?.[0]?.hooks?.map(h => h.command as string | undefined) || [];
       expect(stopCommands).toContain("/user/on-stop-1.sh");
       expect(stopCommands).toContain("/user/on-stop-2.sh");
       expect(stopCommands.some(c => c?.includes("claude-done-sound.sh"))).toBe(true);
 
-      // Verify user's Notification hooks are preserved
-      const customMatcher = result.Notification?.find(m => m.matcher === "custom_event");
-      expect(customMatcher?.hooks?.[0]?.command).toBe("/user/custom.sh");
-
-      // Verify our notification hooks are merged with user's
-      const idleMatcher = result.Notification?.find(m => m.matcher === "idle_prompt");
-      const idleCommands = idleMatcher?.hooks?.map(h => h.command as string | undefined) || [];
-      expect(idleCommands).toContain("/user/idle.sh");
-      expect(idleCommands.some(c => c?.includes("claude-waiting-sound.sh"))).toBe(true);
+      // Verify user's Notification hooks are preserved unchanged (we don't modify Notification anymore)
+      expect(result.Notification).toEqual(existing.Notification);
     });
 
-    test("does not remove any user data even with conflicting matchers", () => {
+    test("does not remove any user data in Notification (we don't modify it)", () => {
       const existing: HooksConfig = {
         Notification: [
           { 
@@ -254,18 +238,8 @@ describe("mergeHooksConfig", () => {
 
       const result = mergeHooksConfig(existing, testBinDir);
 
-      const idleMatcher = result.Notification?.find(m => m.matcher === "idle_prompt");
-      const commands = idleMatcher?.hooks?.map(h => h.command as string | undefined) || [];
-
-      // All user scripts should still be there
-      expect(commands).toContain("/user/script1.sh");
-      expect(commands).toContain("/user/script2.sh");
-
-      // Our script should be added
-      expect(commands.some(c => c?.includes("claude-waiting-sound.sh"))).toBe(true);
-
-      // Total should be 3 (2 user + 1 ours)
-      expect(commands.length).toBe(3);
+      // Notification should be preserved unchanged
+      expect(result.Notification).toEqual(existing.Notification);
     });
   });
 });

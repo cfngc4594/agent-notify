@@ -16,11 +16,13 @@ curl -fsSL https://raw.githubusercontent.com/cfngc4594/agent-notify/main/install
 - Voice announcements (say command)
 - ntfy push notifications (self-hosted or ntfy.sh)
 
-Get notified when task completes, waiting for input, or permission requested.
+Get notified when task completes.
 
 ![Platform and feature selection](./assets/image1.png)
 
-![ntfy push notification on mobile](./assets/image2.jpeg)
+![macOS notification](./assets/image2.png)
+
+![ntfy push notification on mobile](./assets/image3.png)
 
 ## Install
 
@@ -51,12 +53,25 @@ bun install && bun run dev
 
 ## Configuration
 
-Both platforms are **automatically configured** by the installer:
+All three platforms are **automatically configured** by the installer:
 
-- **Claude Code / Cursor** → hooks in `~/.claude/settings.json`
-- **OpenAI Codex** → notify in `~/.codex/config.toml`
+| Platform | Config File | Hook |
+|----------|-------------|------|
+| Claude Code | `~/.claude/settings.json` | `Stop` |
+| Cursor | `~/.cursor/hooks.json` | `stop` |
+| OpenAI Codex | `~/.codex/config.toml` | `notify` |
 
-No manual configuration needed.
+The installer shows a **diff preview** before applying changes, so you can review exactly what will be modified. Your existing configuration is preserved.
+
+> **Note:** Since each platform supports different hook events, only the "task completion" hook is configured for consistency across all platforms.
+
+### Using Both Claude Code and Cursor
+
+If you use both Claude Code and Cursor, Cursor will load Claude Code's hooks by default (via "Include third-party skills" setting), which may cause **duplicate notifications**.
+
+To avoid this, disable the option in Cursor:
+
+**Settings → Rules, Skills, Subagents → Include third-party skills, subagents, and other configs → OFF**
 
 ## Self-hosted ntfy (Optional)
 

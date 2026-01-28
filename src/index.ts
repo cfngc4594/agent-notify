@@ -2,16 +2,27 @@ import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { getScriptConfigs, generateScripts, generateCodexScript, CODEX_SCRIPT_NAME, type FeatureOptions, type NtfyConfig } from "./config/scripts";
-import { mergeHooksConfig } from "./config/hooks";
+import {
+  getClaudeScriptConfigs,
+  getCursorScriptConfigs,
+  generateClaudeScripts,
+  generateCursorScripts,
+  generateCodexScript,
+  CODEX_SCRIPT_NAME,
+  type FeatureOptions,
+  type NtfyConfig,
+} from "./config/scripts";
+import { mergeHooksConfig, mergeCursorHooksConfig } from "./config/hooks";
 import {
   readSettingsSafe,
   writeSettings,
   mergeSettings,
+  readCursorHooksSafe,
+  writeCursorHooks,
+  mergeCursorHooksConfig as mergeCursorHooksConfigSettings,
 } from "./utils/settings";
-import { updateCodexNotify, getExistingCodexNotify, isOurCodexNotify, readCodexConfig, generateCodexConfigContent } from "./utils/codex-settings";
+import { updateCodexNotify, getExistingCodexNotify, isOurCodexNotify, generateCodexConfigContent } from "./utils/codex-settings";
 import { formatFileDiff } from "./utils/diff";
-import { SETTINGS_FILE, CODEX_CONFIG_FILE } from "./config/constants";
 import { ensureDir, writeExecutable } from "./utils/fs";
 import { toDisplayPath, toAbsolutePath } from "./utils/path";
 import { selectSoundWithPreview } from "./utils/sound-select";
@@ -63,6 +74,7 @@ async function main() {
     message: t("platformSelect"),
     options: [
       { value: "claudeCode", label: t("platformClaudeCode"), hint: t("platformClaudeCodeHint") },
+      { value: "cursor", label: t("platformCursor"), hint: t("platformCursorHint") },
       { value: "codex", label: t("platformCodex"), hint: t("platformCodexHint") },
     ],
     initialValues: ["claudeCode"],
@@ -81,7 +93,15 @@ async function main() {
 
   const selectedPlatforms = platforms as Platform[];
   const enableClaudeCode = selectedPlatforms.includes("claudeCode");
+  const enableCursor = selectedPlatforms.includes("cursor");
   const enableCodex = selectedPlatforms.includes("codex");
+
+  // Warn if both Claude Code and Cursor are selected
+  if (enableClaudeCode && enableCursor) {
+    console.log();
+    p.log.warn(pc.yellow(t("dualPlatformWarning")));
+    p.log.info(pc.dim(`  ${t("dualPlatformHint")}`));
+  }
 
   // 3. Select features to enable
   const features = await p.multiselect({
@@ -125,7 +145,7 @@ async function main() {
     const ntfyTopic = await p.text({
       message: t("ntfyTopic"),
       placeholder: t("ntfyTopicPlaceholder"),
-      defaultValue: "claude-notify",
+      defaultValue: "agent-notify",
       validate: (value) => {
         if (!value?.trim()) return t("ntfyTopicEmpty");
       },
@@ -150,51 +170,28 @@ async function main() {
     ntfyConfig,
   };
 
-  // 4. Select sounds (with preview) - only if sound feature is enabled
-  const sounds: SoundName[] = [];
-  const scriptConfigs = getScriptConfigs();
-  let codexSound: SoundName = "Glass"; // Default for Codex
+  // 4. Select sound (with preview) - only if sound feature is enabled
+  // All platforms now only have one hook (task completion), so only need one sound
+  const claudeScriptConfigs = getClaudeScriptConfigs();
+  const cursorScriptConfigs = getCursorScriptConfigs();
+  let selectedSound: SoundName = "Glass"; // Default sound
 
   if (featureOptions.sound) {
-    // If Claude Code is enabled, select 3 sounds (done, waiting, permission)
-    if (enableClaudeCode) {
-      for (const [, config] of scriptConfigs.entries()) {
-        console.log();
-        const sound = await selectSoundWithPreview(
-          config.promptMessage,
-          config.defaultSound
-        );
-        if (!sound) {
-          p.cancel(t("canceled"));
-          process.exit(0);
-        }
-        sounds.push(sound);
-      }
-      // Use the "done" sound for Codex as well
-      codexSound = sounds[0] ?? "Glass";
+    console.log();
+    const sound = await selectSoundWithPreview(
+      t("soundDone"),
+      "Glass"
+    );
+    if (!sound) {
+      p.cancel(t("canceled"));
+      process.exit(0);
     }
-
-    // If only Codex is enabled (no Claude Code), select just 1 sound
-    if (enableCodex && !enableClaudeCode) {
-      console.log();
-      p.log.info(pc.dim(t("codexLimitHint")));
-      const sound = await selectSoundWithPreview(
-        t("codexSoundDone"),
-        "Glass"
-      );
-      if (!sound) {
-        p.cancel(t("canceled"));
-        process.exit(0);
-      }
-      codexSound = sound;
-    }
-  } else {
-    // Use default sounds when sound feature is disabled
-    for (const config of scriptConfigs) {
-      sounds.push(config.defaultSound);
-    }
-    codexSound = "Glass";
+    selectedSound = sound;
   }
+
+  // Use the same sound for all platforms
+  const sounds: SoundName[] = [selectedSound];
+  const codexSound = selectedSound;
 
   // 5. Install
   const spinner = p.spinner();
@@ -222,6 +219,29 @@ async function main() {
     spinner.stop(t("configOk"));
   }
 
+  // Check Cursor hooks only if Cursor is selected
+  let cursorHooksResult: Awaited<ReturnType<typeof readCursorHooksSafe>> | null = null;
+  if (enableCursor) {
+    spinner.start(t("checkingSettings"));
+    cursorHooksResult = await readCursorHooksSafe();
+
+    if (!cursorHooksResult.ok) {
+      spinner.stop(pc.red(t("readFailed")));
+      p.log.error(
+        [
+          pc.red(t("configError")),
+          "",
+          `  ${pc.dim(t("file"))} ${cursorHooksResult.path}`,
+          `  ${pc.dim(t("error"))} ${cursorHooksResult.message}`,
+          "",
+          pc.yellow(t("jsonHint")),
+        ].join("\n")
+      );
+      process.exit(1);
+    }
+    spinner.stop(t("configOk"));
+  }
+
   spinner.start(t("creatingDir"));
   await ensureDir(binDir);
   spinner.stop(t("dirReady"));
@@ -233,16 +253,30 @@ async function main() {
 
   // Install Claude Code scripts
   if (enableClaudeCode) {
-    const scripts = generateScripts(sounds, featureOptions);
+    const scripts = generateClaudeScripts(sounds, featureOptions);
     await Promise.all(
       Object.entries(scripts).map(([name, content]) =>
         writeExecutable(join(binDir, name), content)
       )
     );
-    installedScripts.push(...scriptConfigs.map((c, i) =>
+    installedScripts.push(...claudeScriptConfigs.map((c, i) =>
       `  ${pc.dim("•")} ${binDirDisplay}/${c.name} ${pc.dim(`(${sounds[i]})`)}`
     ));
-    totalScripts += scriptConfigs.length;
+    totalScripts += claudeScriptConfigs.length;
+  }
+
+  // Install Cursor scripts
+  if (enableCursor) {
+    const scripts = generateCursorScripts(sounds, featureOptions);
+    await Promise.all(
+      Object.entries(scripts).map(([name, content]) =>
+        writeExecutable(join(binDir, name), content)
+      )
+    );
+    installedScripts.push(...cursorScriptConfigs.map((c, i) =>
+      `  ${pc.dim("•")} ${binDirDisplay}/${c.name} ${pc.dim(`(${sounds[i]})`)}`
+    ));
+    totalScripts += cursorScriptConfigs.length;
   }
 
   // Install Codex script
@@ -262,7 +296,9 @@ async function main() {
   const codexScriptPathDisplay = `${binDirDisplay}/${CODEX_SCRIPT_NAME}`;
 
   let claudeUpdatedSettings: ReturnType<typeof mergeSettings> | null = null;
+  let cursorUpdatedHooks: ReturnType<typeof mergeCursorHooksConfigSettings> | null = null;
   let shouldUpdateClaude = false;
+  let shouldUpdateCursor = false;
   let shouldUpdateCodex = false;
   let codexExistingNotify: string | null = null;
 
@@ -271,6 +307,14 @@ async function main() {
     const newHooks = mergeHooksConfig(settingsResult.data.hooks, binDir);
     claudeUpdatedSettings = mergeSettings(settingsResult.data, newHooks);
     shouldUpdateClaude = true;
+  }
+
+  // Calculate Cursor changes
+  if (enableCursor && cursorHooksResult?.ok) {
+    const existingHooks = cursorHooksResult.data.hooks as Record<string, unknown> | undefined;
+    const newHooks = mergeCursorHooksConfig(existingHooks as Parameters<typeof mergeCursorHooksConfig>[0], binDir);
+    cursorUpdatedHooks = mergeCursorHooksConfigSettings(cursorHooksResult.data, newHooks as Record<string, unknown>);
+    shouldUpdateCursor = true;
   }
 
   // Calculate Codex changes
@@ -306,7 +350,7 @@ async function main() {
   }
 
   // Show real diff and ask for confirmation
-  if (shouldUpdateClaude || shouldUpdateCodex) {
+  if (shouldUpdateClaude || shouldUpdateCursor || shouldUpdateCodex) {
     console.log();
     const previewLines: string[] = [];
     let hasAnyChanges = false;
@@ -316,6 +360,16 @@ async function main() {
       const oldContent = JSON.stringify(settingsResult.data, null, 2);
       const newContent = JSON.stringify(claudeUpdatedSettings, null, 2);
       const result = formatFileDiff(t("claudeSettingsPath"), oldContent, newContent, t("noChangesNeeded"));
+      previewLines.push(...result.lines);
+      if (result.hasChanges) hasAnyChanges = true;
+    }
+
+    // Cursor hooks diff
+    if (shouldUpdateCursor && cursorUpdatedHooks && cursorHooksResult?.ok) {
+      if (previewLines.length > 0) previewLines.push("");
+      const oldContent = JSON.stringify(cursorHooksResult.data, null, 2);
+      const newContent = JSON.stringify(cursorUpdatedHooks, null, 2);
+      const result = formatFileDiff(t("cursorHooksPath"), oldContent, newContent, t("noChangesNeeded"));
       previewLines.push(...result.lines);
       if (result.hasChanges) hasAnyChanges = true;
     }
@@ -335,6 +389,7 @@ async function main() {
     if (!hasAnyChanges) {
       p.log.success(t("allConfigsUpToDate"));
       shouldUpdateClaude = false;
+      shouldUpdateCursor = false;
       shouldUpdateCodex = false;
     } else {
       const confirm = await p.confirm({
@@ -350,6 +405,7 @@ async function main() {
 
   // Now apply the changes (only if there are real changes)
   let claudeConfigUpdated = false;
+  let cursorConfigUpdated = false;
   let codexConfigUpdated = false;
 
   if (shouldUpdateClaude && claudeUpdatedSettings) {
@@ -357,6 +413,13 @@ async function main() {
     await writeSettings(claudeUpdatedSettings);
     spinner.stop(t("settingsUpdated"));
     claudeConfigUpdated = true;
+  }
+
+  if (shouldUpdateCursor && cursorUpdatedHooks) {
+    spinner.start(t("updatingCursor"));
+    await writeCursorHooks(cursorUpdatedHooks);
+    spinner.stop(t("cursorUpdated"));
+    cursorConfigUpdated = true;
   }
 
   if (shouldUpdateCodex) {
@@ -377,9 +440,16 @@ async function main() {
     resultLines.push(
       "",
       pc.green(t("configuredHooks")),
-      `  ${pc.dim("•")} Stop → claude-done-sound.sh`,
-      `  ${pc.dim("•")} Notification (idle) → claude-waiting-sound.sh`,
-      `  ${pc.dim("•")} Notification (permission) → claude-permission-sound.sh`
+      `  ${pc.dim("•")} Stop → claude-done-sound.sh`
+    );
+  }
+
+  // Cursor hooks info
+  if (cursorConfigUpdated) {
+    resultLines.push(
+      "",
+      pc.green(t("cursorConfiguredHooks")),
+      `  ${pc.dim("•")} stop → cursor-done-sound.sh`
     );
   }
 

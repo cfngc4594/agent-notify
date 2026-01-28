@@ -16,11 +16,13 @@ curl -fsSL https://raw.githubusercontent.com/cfngc4594/agent-notify/main/install
 - 语音播报（say 命令）
 - ntfy 推送通知（支持自托管或 ntfy.sh）
 
-任务完成、等待输入、请求权限时通知你。
+任务完成时通知你。
 
 ![平台和功能选择](./assets/image1.png)
 
-![手机上的 ntfy 推送通知](./assets/image2.jpeg)
+![macOS 通知](./assets/image2.png)
+
+![手机上的 ntfy 推送通知](./assets/image3.png)
 
 ## 安装
 
@@ -51,12 +53,25 @@ bun install && bun run dev
 
 ## 配置
 
-安装程序会**自动配置**两个平台：
+安装程序会**自动配置**三个平台：
 
-- **Claude Code / Cursor** → hooks 配置在 `~/.claude/settings.json`
-- **OpenAI Codex** → notify 配置在 `~/.codex/config.toml`
+| 平台 | 配置文件 | Hook |
+|------|---------|------|
+| Claude Code | `~/.claude/settings.json` | `Stop` |
+| Cursor | `~/.cursor/hooks.json` | `stop` |
+| OpenAI Codex | `~/.codex/config.toml` | `notify` |
 
-无需手动操作。
+安装程序会在应用更改前显示 **diff 预览**，让你确认将要修改的内容。你的现有配置会被保留。
+
+> **说明：** 由于各平台支持的 hook 事件不同，为保持一致性，仅配置"任务完成"这一个 hook。
+
+### 同时使用 Claude Code 和 Cursor
+
+如果你同时使用 Claude Code 和 Cursor，Cursor 默认会加载 Claude Code 的 hooks 配置（通过"Include third-party skills"设置），这可能导致**收到重复通知**。
+
+为避免此问题，请在 Cursor 中关闭该选项：
+
+**Settings → Rules, Skills, Subagents → Include third-party skills, subagents, and other configs → 关闭**
 
 ## 自托管 ntfy（可选）
 
