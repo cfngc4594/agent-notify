@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/cfngc4594/claude-notify/compare/v1.3.0...v1.4.0) (2026-01-28)
+
+
+### Features
+
+* **platform:** add OpenAI Codex notification support ([be3ff97](https://github.com/cfngc4594/claude-notify/commit/be3ff9796586d647e42347f03034c863027294a4))
+
 ## [1.3.0](https://github.com/cfngc4594/claude-notify/compare/v1.2.0...v1.3.0) (2026-01-28)
 
 
