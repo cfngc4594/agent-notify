@@ -2,16 +2,25 @@
 
 [English](./README.md)
 
-为 macOS 上的 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 添加声音通知。
+为 macOS 上的 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 添加通知提醒。
 
-当 Claude 发生以下情况时播放提示音：
+当 Claude 发生以下情况时通知你：
 - 任务完成
 - 等待输入
 - 请求权限
 
+**功能（均可选）：**
+- 音效提示（系统声音）
+- macOS 通知
+- 语音播报
+
 ## 截图
 
-![截图](./assets/image.png)
+![功能选择 - 选择音效、通知、语音](./assets/image1.png)
+
+![音效选择器，支持预览](./assets/image2.png)
+
+![安装完成摘要](./assets/image3.png)
 
 ## 安装
 

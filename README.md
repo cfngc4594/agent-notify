@@ -2,16 +2,25 @@
 
 [中文](./README.zh-CN.md)
 
-Sound notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) on macOS.
+Notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) on macOS.
 
-Get notified with system sounds when Claude:
+Get notified when Claude:
 - Completes a task
 - Waits for your input
 - Requests permission
 
-## Screenshot
+**Features (all optional):**
+- Sound effects (system sounds)
+- macOS notifications
+- Voice announcements
 
-![Screenshot](./assets/image.png)
+## Screenshots
+
+![Feature selection - choose sound, notification, voice](./assets/image1.png)
+
+![Sound picker with preview option](./assets/image2.png)
+
+![Installation complete summary](./assets/image3.png)
 
 ## Install
 
