@@ -23,16 +23,15 @@ export async function readCodexConfig(): Promise<CodexConfigResult> {
   }
 }
 
-/** Update or add notify config in Codex config.toml */
-export async function updateCodexNotify(scriptPath: string): Promise<void> {
-  await ensureDir(CODEX_DIR);
-
+/** Generate new Codex config content (without writing) */
+export async function generateCodexConfigContent(scriptPath: string): Promise<{ oldContent: string; newContent: string }> {
   const result = await readCodexConfig();
   if (!result.ok) {
     throw new Error(`Failed to read Codex config: ${result.message}`);
   }
 
   const notifyLine = `notify = ["bash", "${scriptPath}"]`;
+  const oldContent = result.exists ? result.content : "";
   let newContent: string;
 
   if (!result.exists || result.content.trim() === "") {
@@ -52,6 +51,13 @@ export async function updateCodexNotify(scriptPath: string): Promise<void> {
     }
   }
 
+  return { oldContent, newContent };
+}
+
+/** Update or add notify config in Codex config.toml */
+export async function updateCodexNotify(scriptPath: string): Promise<void> {
+  await ensureDir(CODEX_DIR);
+  const { newContent } = await generateCodexConfigContent(scriptPath);
   await Bun.write(CODEX_CONFIG_FILE, newContent);
 }
 

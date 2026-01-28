@@ -102,6 +102,18 @@ const messages = {
     codexOverwrite: "Overwrite with new configuration",
     codexKeep: "Keep existing configuration",
     codexSkipped: "Codex config unchanged (kept existing)",
+
+    // Config diff
+    configPreview: "Configuration preview",
+    claudeSettingsPath: "~/.claude/settings.json",
+    codexConfigPath: "~/.codex/config.toml",
+    confirmChanges: "Apply these changes?",
+    confirmYes: "Yes, apply changes",
+    confirmNo: "No, cancel",
+    changesApplied: "Changes applied",
+    changesCanceled: "Changes canceled",
+    noChangesNeeded: "(already configured)",
+    allConfigsUpToDate: "All configurations are already up to date!",
   },
   zh: {
     // Main flow
@@ -204,6 +216,18 @@ const messages = {
     codexOverwrite: "覆盖为新配置",
     codexKeep: "保留现有配置",
     codexSkipped: "Codex 配置未变更（已保留）",
+
+    // Config diff
+    configPreview: "配置预览",
+    claudeSettingsPath: "~/.claude/settings.json",
+    codexConfigPath: "~/.codex/config.toml",
+    confirmChanges: "是否应用这些更改？",
+    confirmYes: "是，应用更改",
+    confirmNo: "否，取消",
+    changesApplied: "更改已应用",
+    changesCanceled: "更改已取消",
+    noChangesNeeded: "（已配置）",
+    allConfigsUpToDate: "所有配置已是最新！",
   },
 } as const;
 

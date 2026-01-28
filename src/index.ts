@@ -9,7 +9,9 @@ import {
   writeSettings,
   mergeSettings,
 } from "./utils/settings";
-import { updateCodexNotify, getExistingCodexNotify, isOurCodexNotify } from "./utils/codex-settings";
+import { updateCodexNotify, getExistingCodexNotify, isOurCodexNotify, readCodexConfig, generateCodexConfigContent } from "./utils/codex-settings";
+import { formatFileDiff } from "./utils/diff";
+import { SETTINGS_FILE, CODEX_CONFIG_FILE } from "./config/constants";
 import { ensureDir, writeExecutable } from "./utils/fs";
 import { toDisplayPath, toAbsolutePath } from "./utils/path";
 import { selectSoundWithPreview } from "./utils/sound-select";
@@ -255,27 +257,31 @@ async function main() {
 
   spinner.stop(t("scriptsInstalled")(totalScripts));
 
-  // Update Claude settings only if Claude Code is selected
+  // Prepare config changes (but don't write yet)
+  const codexScriptPath = join(binDir, CODEX_SCRIPT_NAME);
+  const codexScriptPathDisplay = `${binDirDisplay}/${CODEX_SCRIPT_NAME}`;
+
+  let claudeUpdatedSettings: ReturnType<typeof mergeSettings> | null = null;
+  let shouldUpdateClaude = false;
+  let shouldUpdateCodex = false;
+  let codexExistingNotify: string | null = null;
+
+  // Calculate Claude changes
   if (enableClaudeCode && settingsResult?.ok) {
-    spinner.start(t("updatingSettings"));
     const newHooks = mergeHooksConfig(settingsResult.data.hooks, binDir);
-    const updatedSettings = mergeSettings(settingsResult.data, newHooks);
-    await writeSettings(updatedSettings);
-    spinner.stop(t("settingsUpdated"));
+    claudeUpdatedSettings = mergeSettings(settingsResult.data, newHooks);
+    shouldUpdateClaude = true;
   }
 
-  // Update Codex config.toml if Codex is selected
-  const codexScriptPath = join(binDir, CODEX_SCRIPT_NAME);
-  let codexConfigUpdated = false;
-
+  // Calculate Codex changes
   if (enableCodex) {
-    const existingNotify = await getExistingCodexNotify();
+    codexExistingNotify = await getExistingCodexNotify();
 
     // Check if there's existing config that's NOT ours
-    if (existingNotify && !isOurCodexNotify(existingNotify, codexScriptPath)) {
+    if (codexExistingNotify && !isOurCodexNotify(codexExistingNotify, codexScriptPath)) {
       console.log();
       p.log.warn(pc.yellow(t("codexExistingNotify")));
-      p.log.info(pc.dim(`  ${existingNotify}`));
+      p.log.info(pc.dim(`  ${codexExistingNotify}`));
 
       const action = await p.select({
         message: t("codexOverwritePrompt"),
@@ -290,21 +296,74 @@ async function main() {
         process.exit(0);
       }
 
-      if (action === "overwrite") {
-        spinner.start(t("updatingCodex"));
-        await updateCodexNotify(codexScriptPath);
-        spinner.stop(t("codexUpdated"));
-        codexConfigUpdated = true;
-      } else {
+      shouldUpdateCodex = action === "overwrite";
+      if (!shouldUpdateCodex) {
         p.log.info(pc.dim(t("codexSkipped")));
       }
     } else {
-      // No existing config or it's already ours - safe to update
-      spinner.start(t("updatingCodex"));
-      await updateCodexNotify(codexScriptPath);
-      spinner.stop(t("codexUpdated"));
-      codexConfigUpdated = true;
+      shouldUpdateCodex = true;
     }
+  }
+
+  // Show real diff and ask for confirmation
+  if (shouldUpdateClaude || shouldUpdateCodex) {
+    console.log();
+    const previewLines: string[] = [];
+    let hasAnyChanges = false;
+
+    // Claude settings diff
+    if (shouldUpdateClaude && claudeUpdatedSettings && settingsResult?.ok) {
+      const oldContent = JSON.stringify(settingsResult.data, null, 2);
+      const newContent = JSON.stringify(claudeUpdatedSettings, null, 2);
+      const result = formatFileDiff(t("claudeSettingsPath"), oldContent, newContent, t("noChangesNeeded"));
+      previewLines.push(...result.lines);
+      if (result.hasChanges) hasAnyChanges = true;
+    }
+
+    // Codex config diff
+    if (shouldUpdateCodex) {
+      if (previewLines.length > 0) previewLines.push("");
+      const { oldContent, newContent } = await generateCodexConfigContent(codexScriptPath);
+      const result = formatFileDiff(t("codexConfigPath"), oldContent, newContent, t("noChangesNeeded"));
+      previewLines.push(...result.lines);
+      if (result.hasChanges) hasAnyChanges = true;
+    }
+
+    p.note(previewLines.join("\n"), t("configPreview"));
+
+    // If no changes needed, skip confirmation and writing
+    if (!hasAnyChanges) {
+      p.log.success(t("allConfigsUpToDate"));
+      shouldUpdateClaude = false;
+      shouldUpdateCodex = false;
+    } else {
+      const confirm = await p.confirm({
+        message: t("confirmChanges"),
+      });
+
+      if (p.isCancel(confirm) || !confirm) {
+        p.cancel(t("changesCanceled"));
+        process.exit(0);
+      }
+    }
+  }
+
+  // Now apply the changes (only if there are real changes)
+  let claudeConfigUpdated = false;
+  let codexConfigUpdated = false;
+
+  if (shouldUpdateClaude && claudeUpdatedSettings) {
+    spinner.start(t("updatingSettings"));
+    await writeSettings(claudeUpdatedSettings);
+    spinner.stop(t("settingsUpdated"));
+    claudeConfigUpdated = true;
+  }
+
+  if (shouldUpdateCodex) {
+    spinner.start(t("updatingCodex"));
+    await updateCodexNotify(codexScriptPath);
+    spinner.stop(t("codexUpdated"));
+    codexConfigUpdated = true;
   }
 
   // 6. Show results
@@ -314,7 +373,7 @@ async function main() {
   ];
 
   // Claude Code hooks info
-  if (enableClaudeCode) {
+  if (claudeConfigUpdated) {
     resultLines.push(
       "",
       pc.green(t("configuredHooks")),
@@ -325,8 +384,7 @@ async function main() {
   }
 
   // Codex config info
-  if (enableCodex && codexConfigUpdated) {
-    const codexScriptPathDisplay = `${binDirDisplay}/${CODEX_SCRIPT_NAME}`;
+  if (codexConfigUpdated) {
     resultLines.push(
       "",
       pc.green(t("codexConfiguredNotify")),

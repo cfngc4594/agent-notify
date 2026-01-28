@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "dev": "bun src/index.ts",
-    "build": "bun build --compile --minify --sourcemap src/index.ts --outfile dist/agent-notify"
+    "build": "bun build --compile --minify --sourcemap src/index.ts --outfile dist/agent-notify",
+    "test": "bun test"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -16,6 +17,8 @@
   },
   "dependencies": {
     "@clack/core": "1.0.0-alpha.7",
-    "@clack/prompts": "1.0.0-alpha.7"
+    "@clack/prompts": "1.0.0-alpha.7",
+    "diff": "^8.0.3",
+    "picocolors": "^1.1.1"
   }
 }
