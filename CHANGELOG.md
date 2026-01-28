@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/cfngc4594/agent-notify/compare/v2.3.0...v2.3.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* **release:** compress binaries with tar.gz for smaller downloads ([472cccb](https://github.com/cfngc4594/agent-notify/commit/472cccbb55feec2f24e9165d6e77998552f04326))
+
 ## [2.3.0](https://github.com/cfngc4594/agent-notify/compare/v2.2.0...v2.3.0) (2026-01-28)
 
 
