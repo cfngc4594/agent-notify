@@ -11,8 +11,9 @@ Get notified when Claude:
 
 **Features (all optional):**
 - Sound effects (system sounds)
-- macOS notifications
-- Voice announcements
+- macOS notifications (Notification Center)
+- Voice announcements (say command)
+- ntfy push notifications (self-hosted or ntfy.sh)
 
 ## Screenshots
 
@@ -20,7 +21,7 @@ Get notified when Claude:
 
 ![Sound picker with preview option](./assets/image2.png)
 
-![Installation complete summary](./assets/image3.png)
+![Installation complete summary](./assets/image3.jpeg)
 
 ## Install
 
@@ -41,6 +42,16 @@ chmod +x ./claude-notify-arm64
 ```bash
 bun run build
 ```
+
+## Self-hosted ntfy (Optional)
+
+If you want to use ntfy push notifications with your own server:
+
+```bash
+docker compose up -d
+```
+
+This will start a ntfy server on port 1145. Configure the ntfy URL during setup.
 
 ## License
 

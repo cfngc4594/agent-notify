@@ -11,8 +11,9 @@
 
 **功能（均可选）：**
 - 音效提示（系统声音）
-- macOS 通知
-- 语音播报
+- macOS 通知（通知中心）
+- 语音播报（say 命令）
+- ntfy 推送通知（支持自托管或 ntfy.sh）
 
 ## 截图
 
@@ -20,7 +21,7 @@
 
 ![音效选择器，支持预览](./assets/image2.png)
 
-![安装完成摘要](./assets/image3.png)
+![安装完成摘要](./assets/image3.jpeg)
 
 ## 安装
 
@@ -41,6 +42,16 @@ chmod +x ./claude-notify-arm64
 ```bash
 bun run build
 ```
+
+## 自托管 ntfy（可选）
+
+如果你想使用自己的 ntfy 服务器进行推送通知：
+
+```bash
+docker compose up -d
+```
+
+这将在端口 1145 启动一个 ntfy 服务器。在设置过程中配置 ntfy URL 即可。
 
 ## 许可证
 
