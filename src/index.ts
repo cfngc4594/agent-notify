@@ -2,7 +2,7 @@ import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { getScriptConfigs, generateScripts, type FeatureOptions, type NtfyConfig } from "./config/scripts";
+import { getScriptConfigs, generateScripts, generateCodexScript, CODEX_SCRIPT_NAME, type FeatureOptions, type NtfyConfig } from "./config/scripts";
 import { mergeHooksConfig } from "./config/hooks";
 import {
   readSettingsSafe,
@@ -13,7 +13,7 @@ import { ensureDir, writeExecutable } from "./utils/fs";
 import { toDisplayPath, toAbsolutePath } from "./utils/path";
 import { selectSoundWithPreview } from "./utils/sound-select";
 import { setLocale, t } from "./i18n";
-import type { SoundName } from "./types";
+import type { SoundName, Platform } from "./types";
 
 const DEFAULT_BIN_DIR = join(homedir(), ".bin");
 
@@ -55,7 +55,32 @@ async function main() {
   const binDir = toAbsolutePath(binDirInput);
   const binDirDisplay = toDisplayPath(binDir);
 
-  // 2. Select features to enable
+  // 2. Select target platforms
+  const platforms = await p.multiselect({
+    message: t("platformSelect"),
+    options: [
+      { value: "claudeCode", label: t("platformClaudeCode"), hint: t("platformClaudeCodeHint") },
+      { value: "codex", label: t("platformCodex"), hint: t("platformCodexHint") },
+    ],
+    initialValues: ["claudeCode"],
+    required: true,
+  });
+
+  if (p.isCancel(platforms)) {
+    p.cancel(t("canceled"));
+    process.exit(0);
+  }
+
+  if (platforms.length === 0) {
+    p.cancel(t("platformRequired"));
+    process.exit(0);
+  }
+
+  const selectedPlatforms = platforms as Platform[];
+  const enableClaudeCode = selectedPlatforms.includes("claudeCode");
+  const enableCodex = selectedPlatforms.includes("codex");
+
+  // 3. Select features to enable
   const features = await p.multiselect({
     message: t("featureToggle"),
     options: [
@@ -78,7 +103,7 @@ async function main() {
     process.exit(0);
   }
 
-  // 2.1 Get ntfy config if enabled
+  // 3.1 Get ntfy config if enabled
   let ntfyConfig: NtfyConfig | undefined;
   if (features.includes("ntfy")) {
     const ntfyUrl = await p.text({
@@ -122,89 +147,150 @@ async function main() {
     ntfyConfig,
   };
 
-  // 3. Select sounds (with preview) - only if sound feature is enabled
+  // 4. Select sounds (with preview) - only if sound feature is enabled
   const sounds: SoundName[] = [];
   const scriptConfigs = getScriptConfigs();
+  let codexSound: SoundName = "Glass"; // Default for Codex
 
   if (featureOptions.sound) {
-    for (const [, config] of scriptConfigs.entries()) {
+    // If Claude Code is enabled, select 3 sounds (done, waiting, permission)
+    if (enableClaudeCode) {
+      for (const [, config] of scriptConfigs.entries()) {
+        console.log();
+        const sound = await selectSoundWithPreview(
+          config.promptMessage,
+          config.defaultSound
+        );
+        if (!sound) {
+          p.cancel(t("canceled"));
+          process.exit(0);
+        }
+        sounds.push(sound);
+      }
+      // Use the "done" sound for Codex as well
+      codexSound = sounds[0] ?? "Glass";
+    }
+
+    // If only Codex is enabled (no Claude Code), select just 1 sound
+    if (enableCodex && !enableClaudeCode) {
       console.log();
+      p.log.info(pc.dim(t("codexLimitHint")));
       const sound = await selectSoundWithPreview(
-        config.promptMessage,
-        config.defaultSound
+        t("codexSoundDone"),
+        "Glass"
       );
       if (!sound) {
         p.cancel(t("canceled"));
         process.exit(0);
       }
-      sounds.push(sound);
+      codexSound = sound;
     }
   } else {
     // Use default sounds when sound feature is disabled
     for (const config of scriptConfigs) {
       sounds.push(config.defaultSound);
     }
+    codexSound = "Glass";
   }
 
-  // 4. Install
+  // 5. Install
   const spinner = p.spinner();
-  spinner.start(t("checkingSettings"));
-  const settingsResult = await readSettingsSafe();
 
-  if (!settingsResult.ok) {
-    spinner.stop(pc.red(t("readFailed")));
-    p.log.error(
-      [
-        pc.red(t("configError")),
-        "",
-        `  ${pc.dim(t("file"))} ${settingsResult.path}`,
-        `  ${pc.dim(t("error"))} ${settingsResult.message}`,
-        "",
-        pc.yellow(t("jsonHint")),
-      ].join("\n")
-    );
-    process.exit(1);
+  // Check Claude settings only if Claude Code is selected
+  let settingsResult: Awaited<ReturnType<typeof readSettingsSafe>> | null = null;
+  if (enableClaudeCode) {
+    spinner.start(t("checkingSettings"));
+    settingsResult = await readSettingsSafe();
+
+    if (!settingsResult.ok) {
+      spinner.stop(pc.red(t("readFailed")));
+      p.log.error(
+        [
+          pc.red(t("configError")),
+          "",
+          `  ${pc.dim(t("file"))} ${settingsResult.path}`,
+          `  ${pc.dim(t("error"))} ${settingsResult.message}`,
+          "",
+          pc.yellow(t("jsonHint")),
+        ].join("\n")
+      );
+      process.exit(1);
+    }
+    spinner.stop(t("configOk"));
   }
-  spinner.stop(t("configOk"));
 
   spinner.start(t("creatingDir"));
   await ensureDir(binDir);
   spinner.stop(t("dirReady"));
 
   spinner.start(t("installingScripts"));
-  const scripts = generateScripts(sounds, featureOptions);
 
-  await Promise.all(
-    Object.entries(scripts).map(([name, content]) =>
-      writeExecutable(join(binDir, name), content)
-    )
-  );
-  spinner.stop(t("scriptsInstalled")(scriptConfigs.length));
+  const installedScripts: string[] = [];
+  let totalScripts = 0;
 
-  spinner.start(t("updatingSettings"));
-  const newHooks = mergeHooksConfig(settingsResult.data.hooks, binDir);
-  const updatedSettings = mergeSettings(settingsResult.data, newHooks);
-  await writeSettings(updatedSettings);
-  spinner.stop(t("settingsUpdated"));
+  // Install Claude Code scripts
+  if (enableClaudeCode) {
+    const scripts = generateScripts(sounds, featureOptions);
+    await Promise.all(
+      Object.entries(scripts).map(([name, content]) =>
+        writeExecutable(join(binDir, name), content)
+      )
+    );
+    installedScripts.push(...scriptConfigs.map((c, i) =>
+      `  ${pc.dim("•")} ${binDirDisplay}/${c.name} ${pc.dim(`(${sounds[i]})`)}`
+    ));
+    totalScripts += scriptConfigs.length;
+  }
 
-  // 5. Show results
-  p.note(
-    [
-      pc.green(t("installedScripts")),
-      ...scriptConfigs.map(
-        (c, i) =>
-          `  ${pc.dim("•")} ${binDirDisplay}/${c.name} ${pc.dim(
-            `(${sounds[i]})`
-          )}`
-      ),
+  // Install Codex script
+  if (enableCodex) {
+    const codexScript = generateCodexScript(codexSound, featureOptions);
+    await writeExecutable(join(binDir, CODEX_SCRIPT_NAME), codexScript);
+    installedScripts.push(
+      `  ${pc.dim("•")} ${binDirDisplay}/${CODEX_SCRIPT_NAME} ${pc.dim(`(${codexSound})`)}`
+    );
+    totalScripts += 1;
+  }
+
+  spinner.stop(t("scriptsInstalled")(totalScripts));
+
+  // Update Claude settings only if Claude Code is selected
+  if (enableClaudeCode && settingsResult?.ok) {
+    spinner.start(t("updatingSettings"));
+    const newHooks = mergeHooksConfig(settingsResult.data.hooks, binDir);
+    const updatedSettings = mergeSettings(settingsResult.data, newHooks);
+    await writeSettings(updatedSettings);
+    spinner.stop(t("settingsUpdated"));
+  }
+
+  // 6. Show results
+  const resultLines: string[] = [
+    pc.green(t("installedScripts")),
+    ...installedScripts,
+  ];
+
+  // Claude Code hooks info
+  if (enableClaudeCode) {
+    resultLines.push(
       "",
       pc.green(t("configuredHooks")),
       `  ${pc.dim("•")} Stop → claude-done-sound.sh`,
       `  ${pc.dim("•")} Notification (idle) → claude-waiting-sound.sh`,
-      `  ${pc.dim("•")} Notification (permission) → claude-permission-sound.sh`,
-    ].join("\n"),
-    t("installComplete")
-  );
+      `  ${pc.dim("•")} Notification (permission) → claude-permission-sound.sh`
+    );
+  }
+
+  // Codex config hint
+  if (enableCodex) {
+    const codexScriptPath = `${binDirDisplay}/${CODEX_SCRIPT_NAME}`;
+    resultLines.push(
+      "",
+      pc.green(t("codexConfigHint")),
+      `  ${pc.cyan(t("codexConfigLine")(codexScriptPath))}`
+    );
+  }
+
+  p.note(resultLines.join("\n"), t("installComplete"));
 
   p.outro(pc.green(t("done")));
 }

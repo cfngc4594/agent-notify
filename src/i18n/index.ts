@@ -69,6 +69,27 @@ const messages = {
     ntfyTopic: "ntfy topic name",
     ntfyTopicPlaceholder: "claude-notify",
     ntfyTopicEmpty: "Topic cannot be empty",
+
+    // Platform selection
+    platformSelect: "Select target platform (Space to toggle, Enter to confirm)",
+    platformClaudeCode: "Claude Code / Cursor",
+    platformClaudeCodeHint: "hooks in ~/.claude/settings.json",
+    platformCodex: "OpenAI Codex",
+    platformCodexHint: "notify in ~/.codex/config.toml",
+    platformRequired: "Please select at least one platform",
+
+    // Codex specific
+    codexScriptName: "codex-notify.sh",
+    codexCommentDone: "Codex task completion notification",
+    codexNotifyTitle: "Codex",
+    codexNotifyMsgDone: "Task completed",
+    codexSayDone: "Codex task completed",
+    codexSoundDone: "Codex task completed",
+    codexLimitHint: "(Codex only supports task completion event)",
+
+    // Results - Codex
+    codexConfigHint: "Codex configuration (add to ~/.codex/config.toml):",
+    codexConfigLine: (path: string) => `notify = ["bash", "${path}"]`,
   },
   zh: {
     // Main flow
@@ -138,6 +159,27 @@ const messages = {
     ntfyTopic: "ntfy 主题名称",
     ntfyTopicPlaceholder: "claude-notify",
     ntfyTopicEmpty: "主题不能为空",
+
+    // Platform selection
+    platformSelect: "选择目标平台 (空格切换, 回车确认)",
+    platformClaudeCode: "Claude Code / Cursor",
+    platformClaudeCodeHint: "hooks 配置在 ~/.claude/settings.json",
+    platformCodex: "OpenAI Codex",
+    platformCodexHint: "notify 配置在 ~/.codex/config.toml",
+    platformRequired: "请至少选择一个平台",
+
+    // Codex specific
+    codexScriptName: "codex-notify.sh",
+    codexCommentDone: "Codex 任务完成通知",
+    codexNotifyTitle: "Codex",
+    codexNotifyMsgDone: "任务已完成",
+    codexSayDone: "Codex 任务完成",
+    codexSoundDone: "Codex 任务完成",
+    codexLimitHint: "（Codex 目前仅支持任务完成事件）",
+
+    // Results - Codex
+    codexConfigHint: "Codex 配置 (添加到 ~/.codex/config.toml):",
+    codexConfigLine: (path: string) => `notify = ["bash", "${path}"]`,
   },
 } as const;
 

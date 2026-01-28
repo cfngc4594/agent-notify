@@ -1,4 +1,4 @@
-import type { SoundName } from "../types";
+import type { SoundName, Platform } from "../types";
 import { t } from "../i18n";
 
 /** Ntfy configuration */
@@ -152,4 +152,71 @@ export function generateScripts(
     );
     return acc;
   }, {} as Record<ScriptName, string>);
+}
+
+// ============================================
+// Codex script generation
+// ============================================
+
+export const CODEX_SCRIPT_NAME = "codex-notify.sh";
+
+/** Generate Codex notification script that handles JSON input */
+export function generateCodexScript(
+  sound: SoundName,
+  options: FeatureOptions
+): string {
+  const notifyTitle = t("codexNotifyTitle");
+  const notifyMsg = t("codexNotifyMsgDone");
+  const sayText = t("codexSayDone");
+  const comment = t("codexCommentDone");
+
+  const lines: string[] = [
+    "#!/usr/bin/env bash",
+    `# ${comment}`,
+    "",
+    "# Codex passes JSON as first argument",
+    'JSON="$1"',
+    "",
+    "# Check if jq is available, otherwise use simple grep",
+    "if command -v jq &> /dev/null; then",
+    '  TYPE=$(echo "$JSON" | jq -r \'.type // empty\')',
+    "else",
+    '  # Fallback: extract type using grep/sed',
+    '  TYPE=$(echo "$JSON" | grep -o \'"type"[[:space:]]*:[[:space:]]*"[^"]*"\' | sed \'s/.*"\\([^"]*\\)"$/\\1/\')',
+    "fi",
+    "",
+    '# Only notify on agent-turn-complete',
+    'if [ "$TYPE" != "agent-turn-complete" ]; then',
+    "  exit 0",
+    "fi",
+    "",
+  ];
+
+  if (options.sound) {
+    lines.push("# Play system sound");
+    lines.push(`afplay /System/Library/Sounds/${sound}.aiff &`);
+    lines.push("");
+  }
+
+  if (options.notification) {
+    lines.push("# Show macOS notification");
+    lines.push(`osascript -e 'display notification "${notifyMsg}" with title "${notifyTitle}"'`);
+    lines.push("");
+  }
+
+  if (options.voice) {
+    lines.push("# Voice announcement");
+    lines.push(`say "${sayText}"`);
+    lines.push("");
+  }
+
+  if (options.ntfy && options.ntfyConfig) {
+    const { url, topic } = options.ntfyConfig;
+    const ntfyUrl = url.endsWith("/") ? `${url}${topic}` : `${url}/${topic}`;
+    lines.push("# Send ntfy push notification");
+    lines.push(`curl -s -d "${notifyMsg}" -H "Title: ${notifyTitle}" "${ntfyUrl}" > /dev/null 2>&1 &`);
+    lines.push("");
+  }
+
+  return lines.join("\n");
 }

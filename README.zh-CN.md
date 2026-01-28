@@ -2,12 +2,16 @@
 
 [English](./README.md)
 
-为 macOS 上的 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 添加通知提醒。
+为 macOS 上的 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 和 [OpenAI Codex](https://openai.com/index/openai-codex/) 添加通知提醒。
 
-当 Claude 发生以下情况时通知你：
+**支持的平台：**
+- **Claude Code / Cursor** - hooks 配置在 `~/.claude/settings.json`
+- **OpenAI Codex** - notify 配置在 `~/.codex/config.toml`
+
+当发生以下情况时通知你：
 - 任务完成
-- 等待输入
-- 请求权限
+- 等待输入（仅 Claude Code）
+- 请求权限（仅 Claude Code）
 
 **功能（均可选）：**
 - 音效提示（系统声音）
@@ -17,11 +21,9 @@
 
 ## 截图
 
-![功能选择 - 选择音效、通知、语音](./assets/image1.png)
+![平台和功能选择](./assets/image1.png)
 
-![音效选择器，支持预览](./assets/image2.png)
-
-![安装完成摘要](./assets/image3.jpeg)
+![手机上的 ntfy 推送通知](./assets/image2.jpeg)
 
 ## 安装
 
@@ -42,6 +44,16 @@ chmod +x ./claude-notify-arm64
 ```bash
 bun run build
 ```
+
+## Codex 配置
+
+运行安装程序并选择 Codex 后，将以下内容添加到 `~/.codex/config.toml`：
+
+```toml
+notify = ["bash", "~/.bin/codex-notify.sh"]
+```
+
+将 `~/.bin` 替换为你实际的脚本安装目录。
 
 ## 自托管 ntfy（可选）
 

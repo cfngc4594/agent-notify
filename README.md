@@ -2,12 +2,16 @@
 
 [中文](./README.zh-CN.md)
 
-Notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) on macOS.
+Notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenAI Codex](https://openai.com/index/openai-codex/) on macOS.
 
-Get notified when Claude:
-- Completes a task
-- Waits for your input
-- Requests permission
+**Supported Platforms:**
+- **Claude Code / Cursor** - hooks in `~/.claude/settings.json`
+- **OpenAI Codex** - notify in `~/.codex/config.toml`
+
+Get notified when:
+- Task completes
+- Waiting for your input (Claude Code only)
+- Permission requested (Claude Code only)
 
 **Features (all optional):**
 - Sound effects (system sounds)
@@ -17,11 +21,9 @@ Get notified when Claude:
 
 ## Screenshots
 
-![Feature selection - choose sound, notification, voice](./assets/image1.png)
+![Platform and feature selection](./assets/image1.png)
 
-![Sound picker with preview option](./assets/image2.png)
-
-![Installation complete summary](./assets/image3.jpeg)
+![ntfy push notification on mobile](./assets/image2.jpeg)
 
 ## Install
 
@@ -42,6 +44,16 @@ chmod +x ./claude-notify-arm64
 ```bash
 bun run build
 ```
+
+## Codex Configuration
+
+After running the installer with Codex selected, add the following to `~/.codex/config.toml`:
+
+```toml
+notify = ["bash", "~/.bin/codex-notify.sh"]
+```
+
+Replace `~/.bin` with your actual script installation directory.
 
 ## Self-hosted ntfy (Optional)
 
