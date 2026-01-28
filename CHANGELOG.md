@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/cfngc4594/claude-notify/compare/v1.2.0...v1.3.0) (2026-01-28)
+
+
+### Features
+
+* **ntfy:** add ntfy push notification support with self-hosted docker setup ([ccf1966](https://github.com/cfngc4594/claude-notify/commit/ccf1966e4c4a10dbd07c5bbc57361496820ad84f))
+
 ## [1.2.0](https://github.com/cfngc4594/claude-notify/compare/v1.1.0...v1.2.0) (2026-01-28)
 
 
