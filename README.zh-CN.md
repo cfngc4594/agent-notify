@@ -1,8 +1,8 @@
-# claude-notify
+# agent-notify
 
 [English](./README.md)
 
-为 macOS 上的 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 和 [OpenAI Codex](https://openai.com/index/openai-codex/) 添加通知提醒。
+为 macOS 上的 AI 编程助手添加通知提醒。支持 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)、[Cursor](https://cursor.sh) 和 [OpenAI Codex](https://openai.com/index/openai-codex/)。
 
 **支持的平台：**
 - **Claude Code / Cursor** - hooks 配置在 `~/.claude/settings.json`
@@ -32,9 +32,9 @@
 bun install && bun run dev
 
 # 或从 Releases 下载可执行文件
-xattr -d com.apple.quarantine ./claude-notify-arm64  # 移除隔离属性
-chmod +x ./claude-notify-arm64
-./claude-notify-arm64
+xattr -d com.apple.quarantine ./agent-notify-arm64  # 移除隔离属性
+chmod +x ./agent-notify-arm64
+./agent-notify-arm64
 ```
 
 > **注意：** macOS 默认会阻止未签名的可执行文件。运行 `xattr -d com.apple.quarantine <文件>` 即可解除限制。

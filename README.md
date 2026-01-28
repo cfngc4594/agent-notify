@@ -1,8 +1,8 @@
-# claude-notify
+# agent-notify
 
 [中文](./README.zh-CN.md)
 
-Notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenAI Codex](https://openai.com/index/openai-codex/) on macOS.
+Notifications for AI coding agents on macOS. Supports [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Cursor](https://cursor.sh), and [OpenAI Codex](https://openai.com/index/openai-codex/).
 
 **Supported Platforms:**
 - **Claude Code / Cursor** - hooks in `~/.claude/settings.json`
@@ -32,9 +32,9 @@ Get notified when:
 bun install && bun run dev
 
 # Or download the binary from Releases
-xattr -d com.apple.quarantine ./claude-notify-arm64  # Remove quarantine
-chmod +x ./claude-notify-arm64
-./claude-notify-arm64
+xattr -d com.apple.quarantine ./agent-notify-arm64  # Remove quarantine
+chmod +x ./agent-notify-arm64
+./agent-notify-arm64
 ```
 
 > **Note:** macOS blocks unsigned binaries by default. Run `xattr -d com.apple.quarantine <file>` to allow execution.
