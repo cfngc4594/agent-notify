@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0](https://github.com/cfngc4594/claude-notify/compare/v1.3.0...v2.0.0) (2026-01-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename project to agent-notify
+
+### Features
+
+* **platform:** add OpenAI Codex notification support ([be3ff97](https://github.com/cfngc4594/claude-notify/commit/be3ff9796586d647e42347f03034c863027294a4))
+* rename project to agent-notify ([1475e80](https://github.com/cfngc4594/claude-notify/commit/1475e804f43bd87b10b21d8908b31decfc418a2a))
+
 ## [1.3.0](https://github.com/cfngc4594/claude-notify/compare/v1.2.0...v1.3.0) (2026-01-28)
 
 
