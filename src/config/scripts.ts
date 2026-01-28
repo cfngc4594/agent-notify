@@ -57,7 +57,7 @@ export const SCRIPT_NAME_LIST: readonly ScriptName[] =
 
 /** Generate script content */
 export function createScript(sound: SoundName, comment: string): string {
-  return `#!/bin/bash
+  return `#!/usr/bin/env bash
 # ${comment}
 afplay /System/Library/Sounds/${sound}.aiff
 `;
