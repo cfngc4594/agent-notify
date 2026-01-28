@@ -90,6 +90,18 @@ const messages = {
     // Results - Codex
     codexConfigHint: "Codex configuration (add to ~/.codex/config.toml):",
     codexConfigLine: (path: string) => `notify = ["bash", "${path}"]`,
+
+    // Codex auto config
+    updatingCodex: "Updating Codex config.toml...",
+    codexUpdated: "Codex config updated",
+    codexConfiguredNotify: "✓ Configured Codex notify:",
+
+    // Codex existing config
+    codexExistingNotify: "Existing notify configuration found in ~/.codex/config.toml",
+    codexOverwritePrompt: "What would you like to do?",
+    codexOverwrite: "Overwrite with new configuration",
+    codexKeep: "Keep existing configuration",
+    codexSkipped: "Codex config unchanged (kept existing)",
   },
   zh: {
     // Main flow
@@ -180,6 +192,18 @@ const messages = {
     // Results - Codex
     codexConfigHint: "Codex 配置 (添加到 ~/.codex/config.toml):",
     codexConfigLine: (path: string) => `notify = ["bash", "${path}"]`,
+
+    // Codex auto config
+    updatingCodex: "更新 Codex config.toml...",
+    codexUpdated: "Codex 配置已更新",
+    codexConfiguredNotify: "✓ 已配置 Codex notify:",
+
+    // Codex existing config
+    codexExistingNotify: "在 ~/.codex/config.toml 中发现已有 notify 配置",
+    codexOverwritePrompt: "你想怎么做？",
+    codexOverwrite: "覆盖为新配置",
+    codexKeep: "保留现有配置",
+    codexSkipped: "Codex 配置未变更（已保留）",
   },
 } as const;
 

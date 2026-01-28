@@ -9,6 +9,7 @@ import {
   writeSettings,
   mergeSettings,
 } from "./utils/settings";
+import { updateCodexNotify, getExistingCodexNotify, isOurCodexNotify } from "./utils/codex-settings";
 import { ensureDir, writeExecutable } from "./utils/fs";
 import { toDisplayPath, toAbsolutePath } from "./utils/path";
 import { selectSoundWithPreview } from "./utils/sound-select";
@@ -263,6 +264,49 @@ async function main() {
     spinner.stop(t("settingsUpdated"));
   }
 
+  // Update Codex config.toml if Codex is selected
+  const codexScriptPath = join(binDir, CODEX_SCRIPT_NAME);
+  let codexConfigUpdated = false;
+
+  if (enableCodex) {
+    const existingNotify = await getExistingCodexNotify();
+
+    // Check if there's existing config that's NOT ours
+    if (existingNotify && !isOurCodexNotify(existingNotify, codexScriptPath)) {
+      console.log();
+      p.log.warn(pc.yellow(t("codexExistingNotify")));
+      p.log.info(pc.dim(`  ${existingNotify}`));
+
+      const action = await p.select({
+        message: t("codexOverwritePrompt"),
+        options: [
+          { value: "overwrite", label: t("codexOverwrite") },
+          { value: "keep", label: t("codexKeep") },
+        ],
+      });
+
+      if (p.isCancel(action)) {
+        p.cancel(t("canceled"));
+        process.exit(0);
+      }
+
+      if (action === "overwrite") {
+        spinner.start(t("updatingCodex"));
+        await updateCodexNotify(codexScriptPath);
+        spinner.stop(t("codexUpdated"));
+        codexConfigUpdated = true;
+      } else {
+        p.log.info(pc.dim(t("codexSkipped")));
+      }
+    } else {
+      // No existing config or it's already ours - safe to update
+      spinner.start(t("updatingCodex"));
+      await updateCodexNotify(codexScriptPath);
+      spinner.stop(t("codexUpdated"));
+      codexConfigUpdated = true;
+    }
+  }
+
   // 6. Show results
   const resultLines: string[] = [
     pc.green(t("installedScripts")),
@@ -280,13 +324,13 @@ async function main() {
     );
   }
 
-  // Codex config hint
-  if (enableCodex) {
-    const codexScriptPath = `${binDirDisplay}/${CODEX_SCRIPT_NAME}`;
+  // Codex config info
+  if (enableCodex && codexConfigUpdated) {
+    const codexScriptPathDisplay = `${binDirDisplay}/${CODEX_SCRIPT_NAME}`;
     resultLines.push(
       "",
-      pc.green(t("codexConfigHint")),
-      `  ${pc.cyan(t("codexConfigLine")(codexScriptPath))}`
+      pc.green(t("codexConfiguredNotify")),
+      `  ${pc.dim("•")} notify → ${codexScriptPathDisplay}`
     );
   }
 
