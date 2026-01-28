@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.0](https://github.com/cfngc4594/agent-notify/compare/v2.1.0...v2.2.0) (2026-01-28)
+
+
+### Features
+
+* **cli:** add config diff preview with confirmation before applying changes ([138e64b](https://github.com/cfngc4594/agent-notify/commit/138e64b8c15a9b4559b47a1900d54283046c9654))
+* **install:** add curl install script and auto-configure Codex ([c1dc0a9](https://github.com/cfngc4594/agent-notify/commit/c1dc0a9b74ad165bef34fb51934500ff966ba62a))
+
 ## [2.1.0](https://github.com/cfngc4594/agent-notify/compare/v2.0.0...v2.1.0) (2026-01-28)
 
 
