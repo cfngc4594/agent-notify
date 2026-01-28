@@ -27,17 +27,32 @@ Get notified when:
 
 ## Install
 
-```bash
-# Using Bun
-bun install && bun run dev
+### One-line install (recommended)
 
-# Or download the binary from Releases
-xattr -d com.apple.quarantine ./agent-notify-arm64  # Remove quarantine
-chmod +x ./agent-notify-arm64
-./agent-notify-arm64
+```bash
+curl -fsSL https://raw.githubusercontent.com/cfngc4594/agent-notify/main/install.sh | bash
 ```
 
-> **Note:** macOS blocks unsigned binaries by default. Run `xattr -d com.apple.quarantine <file>` to allow execution.
+This will download the binary to `~/.local/bin/agent-notify`.
+
+### Manual download
+
+```bash
+# Download for Apple Silicon (M1/M2/M3)
+curl -fsSL https://github.com/cfngc4594/agent-notify/releases/latest/download/agent-notify-arm64 -o agent-notify
+
+# Download for Intel Mac
+curl -fsSL https://github.com/cfngc4594/agent-notify/releases/latest/download/agent-notify-x64 -o agent-notify
+
+chmod +x agent-notify
+./agent-notify
+```
+
+### From source
+
+```bash
+bun install && bun run dev
+```
 
 ## Build
 

@@ -35,15 +35,15 @@ jobs:
         run: bun install
 
       - name: Build x64
-        run: bun build --compile --minify --sourcemap --target=bun-darwin-x64 src/index.ts --outfile dist/claude-notify-x64
+        run: bun build --compile --minify --sourcemap --target=bun-darwin-x64 src/index.ts --outfile dist/agent-notify-x64
 
       - name: Build arm64
-        run: bun build --compile --minify --sourcemap --target=bun-darwin-arm64 src/index.ts --outfile dist/claude-notify-arm64
+        run: bun build --compile --minify --sourcemap --target=bun-darwin-arm64 src/index.ts --outfile dist/agent-notify-arm64
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: |
-            dist/claude-notify-x64
-            dist/claude-notify-arm64
+            dist/agent-notify-x64
+            dist/agent-notify-arm64
