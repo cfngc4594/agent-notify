@@ -2,7 +2,7 @@ import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { getScriptConfigs, generateScripts, type FeatureOptions } from "./config/scripts";
+import { getScriptConfigs, generateScripts, type FeatureOptions, type NtfyConfig } from "./config/scripts";
 import { mergeHooksConfig } from "./config/hooks";
 import {
   readSettingsSafe,
@@ -62,6 +62,7 @@ async function main() {
       { value: "sound", label: t("featureSound"), hint: "afplay" },
       { value: "notification", label: t("featureNotification"), hint: "osascript" },
       { value: "voice", label: t("featureVoice"), hint: "say" },
+      { value: "ntfy", label: t("featureNtfy"), hint: "curl" },
     ],
     initialValues: ["sound", "notification"],
     required: true,
@@ -77,10 +78,48 @@ async function main() {
     process.exit(0);
   }
 
+  // 2.1 Get ntfy config if enabled
+  let ntfyConfig: NtfyConfig | undefined;
+  if (features.includes("ntfy")) {
+    const ntfyUrl = await p.text({
+      message: t("ntfyUrl"),
+      placeholder: t("ntfyUrlPlaceholder"),
+      validate: (value) => {
+        if (!value?.trim()) return t("ntfyUrlEmpty");
+      },
+    });
+
+    if (p.isCancel(ntfyUrl)) {
+      p.cancel(t("canceled"));
+      process.exit(0);
+    }
+
+    const ntfyTopic = await p.text({
+      message: t("ntfyTopic"),
+      placeholder: t("ntfyTopicPlaceholder"),
+      defaultValue: "claude-notify",
+      validate: (value) => {
+        if (!value?.trim()) return t("ntfyTopicEmpty");
+      },
+    });
+
+    if (p.isCancel(ntfyTopic)) {
+      p.cancel(t("canceled"));
+      process.exit(0);
+    }
+
+    ntfyConfig = {
+      url: ntfyUrl.trim(),
+      topic: ntfyTopic.trim(),
+    };
+  }
+
   const featureOptions: FeatureOptions = {
     sound: features.includes("sound"),
     notification: features.includes("notification"),
     voice: features.includes("voice"),
+    ntfy: features.includes("ntfy"),
+    ntfyConfig,
   };
 
   // 3. Select sounds (with preview) - only if sound feature is enabled

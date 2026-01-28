@@ -55,11 +55,20 @@ const messages = {
     default: "default",
 
     // Feature toggles
-    featureToggle: "Select features to enable",
+    featureToggle: "Select features to enable (Space to toggle, Enter to confirm)",
     featureSound: "Sound effects",
     featureNotification: "macOS notifications",
     featureVoice: "Voice announcements",
+    featureNtfy: "ntfy push notifications",
     featureRequired: "Please select at least one feature",
+
+    // Ntfy config
+    ntfyUrl: "ntfy server URL",
+    ntfyUrlPlaceholder: "https://ntfy.sh or http://localhost:80",
+    ntfyUrlEmpty: "URL cannot be empty",
+    ntfyTopic: "ntfy topic name",
+    ntfyTopicPlaceholder: "claude-notify",
+    ntfyTopicEmpty: "Topic cannot be empty",
   },
   zh: {
     // Main flow
@@ -115,11 +124,20 @@ const messages = {
     default: "默认",
 
     // Feature toggles
-    featureToggle: "选择要启用的功能",
+    featureToggle: "选择要启用的功能 (空格切换, 回车确认)",
     featureSound: "音效",
     featureNotification: "macOS 通知",
     featureVoice: "语音播报",
+    featureNtfy: "ntfy 推送通知",
     featureRequired: "请至少选择一项功能",
+
+    // Ntfy config
+    ntfyUrl: "ntfy 服务器地址",
+    ntfyUrlPlaceholder: "https://ntfy.sh 或 http://localhost:80",
+    ntfyUrlEmpty: "地址不能为空",
+    ntfyTopic: "ntfy 主题名称",
+    ntfyTopicPlaceholder: "claude-notify",
+    ntfyTopicEmpty: "主题不能为空",
   },
 } as const;
 

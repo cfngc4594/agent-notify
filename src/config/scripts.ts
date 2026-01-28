@@ -1,11 +1,19 @@
 import type { SoundName } from "../types";
 import { t } from "../i18n";
 
+/** Ntfy configuration */
+export interface NtfyConfig {
+  url: string;
+  topic: string;
+}
+
 /** Feature toggle options */
 export interface FeatureOptions {
   sound: boolean;
   notification: boolean;
   voice: boolean;
+  ntfy: boolean;
+  ntfyConfig?: NtfyConfig;
 }
 
 /** Script config metadata */
@@ -83,7 +91,7 @@ export const SCRIPT_NAMES = {
 export const SCRIPT_NAME_LIST: readonly ScriptName[] =
   Object.values(SCRIPT_NAMES);
 
-/** Generate script content with optional sound + macOS notification + voice */
+/** Generate script content with optional sound + macOS notification + voice + ntfy */
 export function createScript(
   sound: SoundName,
   comment: string,
@@ -113,6 +121,14 @@ export function createScript(
   if (options.voice) {
     lines.push("# Voice announcement");
     lines.push(`say "${sayText}"`);
+    lines.push("");
+  }
+
+  if (options.ntfy && options.ntfyConfig) {
+    const { url, topic } = options.ntfyConfig;
+    const ntfyUrl = url.endsWith("/") ? `${url}${topic}` : `${url}/${topic}`;
+    lines.push("# Send ntfy push notification");
+    lines.push(`curl -s -d "${notifyMsg}" -H "Title: ${notifyTitle}" "${ntfyUrl}" > /dev/null 2>&1 &`);
     lines.push("");
   }
 
