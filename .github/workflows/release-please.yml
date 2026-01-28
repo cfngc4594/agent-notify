@@ -40,10 +40,16 @@ jobs:
       - name: Build arm64
         run: bun build --compile --minify --sourcemap --target=bun-darwin-arm64 src/index.ts --outfile dist/agent-notify-arm64
 
+      - name: Compress binaries
+        run: |
+          cd dist
+          tar -czvf agent-notify-darwin-x64.tar.gz agent-notify-x64
+          tar -czvf agent-notify-darwin-arm64.tar.gz agent-notify-arm64
+
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: |
-            dist/agent-notify-x64
-            dist/agent-notify-arm64
+            dist/agent-notify-darwin-x64.tar.gz
+            dist/agent-notify-darwin-arm64.tar.gz

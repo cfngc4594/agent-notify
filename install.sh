@@ -52,10 +52,12 @@ fi
 # Detect architecture
 case $(uname -m) in
   arm64)
-    target="agent-notify-arm64"
+    target="agent-notify-darwin-arm64"
+    binary="agent-notify-arm64"
     ;;
   x86_64)
-    target="agent-notify-x64"
+    target="agent-notify-darwin-x64"
+    binary="agent-notify-x64"
     ;;
   *)
     error "Unsupported architecture: $(uname -m)"
@@ -64,7 +66,7 @@ esac
 
 # GitHub repo
 github_repo="https://github.com/cfngc4594/agent-notify"
-download_uri="$github_repo/releases/latest/download/$target"
+download_uri="$github_repo/releases/latest/download/$target.tar.gz"
 
 # Install location
 install_dir="$HOME/.local/bin"
@@ -75,8 +77,19 @@ if [[ ! -d $install_dir ]]; then
     error "Failed to create install directory \"$install_dir\""
 fi
 
-curl --fail --location --progress-bar --output "$exe" "$download_uri" ||
+# Create temp directory
+tmp_dir=$(mktemp -d) || error "Failed to create temp directory"
+trap "rm -rf '$tmp_dir'" EXIT
+
+# Download and extract
+curl --fail --location --progress-bar --output "$tmp_dir/$target.tar.gz" "$download_uri" ||
   error "Failed to download agent-notify from \"$download_uri\""
+
+tar -xzf "$tmp_dir/$target.tar.gz" -C "$tmp_dir" ||
+  error "Failed to extract agent-notify"
+
+mv "$tmp_dir/$binary" "$exe" ||
+  error "Failed to install agent-notify to \"$exe\""
 
 chmod +x "$exe" ||
   error "Failed to set permissions on agent-notify executable"
