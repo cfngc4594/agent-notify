@@ -140,6 +140,22 @@ const messages = {
     // Dual platform warning
     dualPlatformWarning: "You selected both Claude Code and Cursor. To avoid duplicate notifications:",
     dualPlatformHint: "Disable \"Include third-party skills\" in Cursor Settings → Rules, Skills, Subagents",
+
+    // CLI specific
+    platformCli: "Command Line (CLI)",
+    platformCliHint: "notify command for any shell",
+    cliCommentDone: "CLI notification script",
+    cliNotifyTitleSuccess: "Terminal",
+    cliNotifyMsgSuccess: "Command completed successfully",
+    cliNotifyTitleFailed: "Terminal",
+    cliNotifyMsgFailed: "Command failed",
+    cliSaySuccess: "Command finished successfully",
+    cliSayFailed: "Command failed",
+    cliConfiguredNotify: "✓ Installed CLI notify script:",
+    cliUsageHint: "Usage: your_command; notify",
+    cliShellConfigured: (config: string) => `Added notify function to "${config}"`,
+    cliPathAdded: (binDir: string, config: string) => `Added "${binDir}" to $PATH in "${config}"`,
+    cliShellManualHint: "Manually add the following to your shell config (e.g. ~/.bashrc):",
   },
   zh: {
     // Main flow
@@ -280,6 +296,22 @@ const messages = {
     // Dual platform warning
     dualPlatformWarning: "你同时选择了 Claude Code 和 Cursor。为避免收到重复通知：",
     dualPlatformHint: "请在 Cursor Settings → Rules, Skills, Subagents 中关闭 \"Include third-party skills\"",
+
+    // CLI specific
+    platformCli: "命令行 (CLI)",
+    platformCliHint: "适用于任何 shell 的 notify 命令",
+    cliCommentDone: "CLI 通知脚本",
+    cliNotifyTitleSuccess: "终端",
+    cliNotifyMsgSuccess: "命令执行成功",
+    cliNotifyTitleFailed: "终端",
+    cliNotifyMsgFailed: "命令执行失败",
+    cliSaySuccess: "命令执行成功",
+    cliSayFailed: "命令执行失败",
+    cliConfiguredNotify: "✓ 已安装 CLI notify 脚本:",
+    cliUsageHint: "使用方法: your_command; notify",
+    cliShellConfigured: (config: string) => `已添加 notify 函数到 "${config}"`,
+    cliPathAdded: (binDir: string, config: string) => `已添加 "${binDir}" 到 $PATH (${config})`,
+    cliShellManualHint: "请手动添加以下内容到你的 shell 配置 (如 ~/.bashrc):",
   },
 } as const;
 

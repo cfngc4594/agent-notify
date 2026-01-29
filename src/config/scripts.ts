@@ -266,3 +266,84 @@ export function generateCodexScript(
 
   return lines.join("\n");
 }
+
+// ============================================
+// CLI notify script generation
+// ============================================
+
+export const CLI_SCRIPT_NAME = "notify";
+
+/** Generate CLI notify script that handles exit code from previous command */
+export function generateCliScript(
+  sound: SoundName,
+  options: FeatureOptions
+): string {
+  const comment = t("cliCommentDone");
+  const successTitle = t("cliNotifyTitleSuccess");
+  const successMsg = t("cliNotifyMsgSuccess");
+  const failedTitle = t("cliNotifyTitleFailed");
+  const failedMsg = t("cliNotifyMsgFailed");
+  const saySuccess = t("cliSaySuccess");
+  const sayFailed = t("cliSayFailed");
+
+  // Pre-compute ntfy URL if needed
+  const ntfyUrl = options.ntfy && options.ntfyConfig
+    ? (options.ntfyConfig.url.endsWith("/")
+        ? `${options.ntfyConfig.url}${options.ntfyConfig.topic}`
+        : `${options.ntfyConfig.url}/${options.ntfyConfig.topic}`)
+    : null;
+
+  const lines: string[] = [
+    "#!/usr/bin/env bash",
+    `# ${comment}`,
+    "",
+    "# Usage: command; notify $?",
+    "# Or define a shell function: notify() { /path/to/notify \"$?\"; }",
+    "",
+    "# Get exit status from argument (default to 0 if not provided)",
+    'EXIT_STATUS="${1:-0}"',
+    "",
+    'if [ "$EXIT_STATUS" -eq 0 ]; then',
+    "  # Success notification",
+  ];
+
+  if (options.sound) {
+    lines.push(`  afplay /System/Library/Sounds/${sound}.aiff &`);
+  }
+
+  if (options.notification) {
+    lines.push(`  osascript -e 'display notification "${successMsg}" with title "${successTitle}"'`);
+  }
+
+  if (options.voice) {
+    lines.push(`  say "${saySuccess}"`);
+  }
+
+  if (ntfyUrl) {
+    lines.push(`  curl -s -d "${successMsg}" -H "Title: ${successTitle}" "${ntfyUrl}" > /dev/null 2>&1 &`);
+  }
+
+  lines.push("else");
+  lines.push("  # Failure notification");
+
+  if (options.sound) {
+    lines.push(`  afplay /System/Library/Sounds/Basso.aiff &`);
+  }
+
+  if (options.notification) {
+    lines.push(`  osascript -e 'display notification "${failedMsg} (exit code: '$EXIT_STATUS')" with title "${failedTitle}"'`);
+  }
+
+  if (options.voice) {
+    lines.push(`  say "${sayFailed}"`);
+  }
+
+  if (ntfyUrl) {
+    lines.push(`  curl -s -d "${failedMsg} (exit code: $EXIT_STATUS)" -H "Title: ${failedTitle}" -H "Priority: high" "${ntfyUrl}" > /dev/null 2>&1 &`);
+  }
+
+  lines.push("fi");
+  lines.push("");
+
+  return lines.join("\n");
+}

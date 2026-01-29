@@ -8,7 +8,9 @@ import {
   generateClaudeScripts,
   generateCursorScripts,
   generateCodexScript,
+  generateCliScript,
   CODEX_SCRIPT_NAME,
+  CLI_SCRIPT_NAME,
   type FeatureOptions,
   type NtfyConfig,
 } from "./config/scripts";
@@ -26,6 +28,7 @@ import { formatFileDiff } from "./utils/diff";
 import { ensureDir, writeExecutable } from "./utils/fs";
 import { toDisplayPath, toAbsolutePath } from "./utils/path";
 import { selectSoundWithPreview } from "./utils/sound-select";
+import { configureShell, getManualConfig } from "./utils/shell-config";
 import { setLocale, t } from "./i18n";
 import type { SoundName, Platform } from "./types";
 
@@ -76,6 +79,7 @@ async function main() {
       { value: "claudeCode", label: t("platformClaudeCode"), hint: t("platformClaudeCodeHint") },
       { value: "cursor", label: t("platformCursor"), hint: t("platformCursorHint") },
       { value: "codex", label: t("platformCodex"), hint: t("platformCodexHint") },
+      { value: "cli", label: t("platformCli"), hint: t("platformCliHint") },
     ],
     initialValues: ["claudeCode"],
     required: true,
@@ -95,6 +99,7 @@ async function main() {
   const enableClaudeCode = selectedPlatforms.includes("claudeCode");
   const enableCursor = selectedPlatforms.includes("cursor");
   const enableCodex = selectedPlatforms.includes("codex");
+  const enableCli = selectedPlatforms.includes("cli");
 
   // Warn if both Claude Code and Cursor are selected
   if (enableClaudeCode && enableCursor) {
@@ -289,6 +294,16 @@ async function main() {
     totalScripts += 1;
   }
 
+  // Install CLI script
+  if (enableCli) {
+    const cliScript = generateCliScript(selectedSound, featureOptions);
+    await writeExecutable(join(binDir, CLI_SCRIPT_NAME), cliScript);
+    installedScripts.push(
+      `  ${pc.dim("•")} ${binDirDisplay}/${CLI_SCRIPT_NAME} ${pc.dim(`(${selectedSound})`)}`
+    );
+    totalScripts += 1;
+  }
+
   spinner.stop(t("scriptsInstalled")(totalScripts));
 
   // Prepare config changes (but don't write yet)
@@ -460,6 +475,50 @@ async function main() {
       pc.green(t("codexConfiguredNotify")),
       `  ${pc.dim("•")} notify → ${codexScriptPathDisplay}`
     );
+  }
+
+  // CLI usage info and shell configuration
+  if (enableCli) {
+    const cliScriptPath = join(binDir, CLI_SCRIPT_NAME);
+    const cliScriptPathDisplay = `${binDirDisplay}/${CLI_SCRIPT_NAME}`;
+    
+    resultLines.push(
+      "",
+      pc.green(t("cliConfiguredNotify")),
+      `  ${pc.dim("•")} ${cliScriptPathDisplay}`
+    );
+
+    // Try to configure shell automatically (like install.sh does for zsh/bash)
+    const shellResult = await configureShell(binDir, cliScriptPath);
+    
+    if (shellResult && shellResult.success) {
+      const configDisplay = toDisplayPath(shellResult.configPath);
+      if (shellResult.pathAdded) {
+        resultLines.push(
+          "",
+          pc.dim(t("cliPathAdded")(binDirDisplay, configDisplay))
+        );
+      }
+      if (shellResult.functionAdded) {
+        resultLines.push(
+          pc.dim(t("cliShellConfigured")(configDisplay))
+        );
+      }
+      resultLines.push(
+        "",
+        pc.dim(t("cliUsageHint"))
+      );
+    } else {
+      // Unsupported shell, show manual instructions
+      const manualConfig = getManualConfig(binDir, cliScriptPath);
+      resultLines.push(
+        "",
+        pc.dim(t("cliShellManualHint")),
+        ...manualConfig.map((line) => pc.cyan(`  ${line}`)),
+        "",
+        pc.dim(t("cliUsageHint"))
+      );
+    }
   }
 
   p.note(resultLines.join("\n"), t("installComplete"));
