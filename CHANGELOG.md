@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/cfngc4594/agent-notify/compare/v2.3.1...v2.4.0) (2026-01-29)
+
+
+### Features
+
+* **platform:** add CLI notify command for general shell usage ([821e477](https://github.com/cfngc4594/agent-notify/commit/821e47777d947ed7e76b0cdf07380f254f865142))
+
 ## [2.3.1](https://github.com/cfngc4594/agent-notify/compare/v2.3.0...v2.3.1) (2026-01-28)
 
 
