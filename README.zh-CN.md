@@ -10,7 +10,7 @@ curl -fsSL https://raw.githubusercontent.com/cfngc4594/agent-notify/main/install
 
 ## 功能
 
-- 支持 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)、[Cursor](https://cursor.sh) 和 [OpenAI Codex](https://openai.com/index/openai-codex/)
+- 支持 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)、[Cursor](https://cursor.sh)、[OpenAI Codex](https://openai.com/index/openai-codex/) 和命令行 (CLI)
 - 音效提示（系统声音）
 - macOS 通知（通知中心）
 - 语音播报（say 命令）
@@ -53,13 +53,14 @@ bun install && bun run dev
 
 ## 配置
 
-安装程序会**自动配置**三个平台：
+安装程序会**自动配置**所有平台：
 
 | 平台 | 配置文件 | Hook |
 |------|---------|------|
 | Claude Code | `~/.claude/settings.json` | `Stop` |
 | Cursor | `~/.cursor/hooks.json` | `stop` |
 | OpenAI Codex | `~/.codex/config.toml` | `notify` |
+| CLI | `~/.zshrc` 或 `~/.bashrc` | `notify` 函数 |
 
 安装程序会在应用更改前显示 **diff 预览**，让你确认将要修改的内容。你的现有配置会被保留。
 

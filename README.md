@@ -10,7 +10,7 @@ curl -fsSL https://raw.githubusercontent.com/cfngc4594/agent-notify/main/install
 
 ## Features
 
-- Works with [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Cursor](https://cursor.sh), and [OpenAI Codex](https://openai.com/index/openai-codex/)
+- Works with [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Cursor](https://cursor.sh), [OpenAI Codex](https://openai.com/index/openai-codex/), and CLI
 - Sound effects (system sounds)
 - macOS notifications (Notification Center)
 - Voice announcements (say command)
@@ -53,13 +53,14 @@ bun install && bun run dev
 
 ## Configuration
 
-All three platforms are **automatically configured** by the installer:
+All platforms are **automatically configured** by the installer:
 
 | Platform | Config File | Hook |
 |----------|-------------|------|
 | Claude Code | `~/.claude/settings.json` | `Stop` |
 | Cursor | `~/.cursor/hooks.json` | `stop` |
 | OpenAI Codex | `~/.codex/config.toml` | `notify` |
+| CLI | `~/.zshrc` or `~/.bashrc` | `notify` function |
 
 The installer shows a **diff preview** before applying changes, so you can review exactly what will be modified. Your existing configuration is preserved.
 
