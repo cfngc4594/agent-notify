@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/cfngc4594/agent-notify/compare/v2.4.0...v2.5.0) (2026-01-31)
+
+
+### Features
+
+* **installer:** add automatic config backup before modification ([68ee79a](https://github.com/cfngc4594/agent-notify/commit/68ee79a0274edd2e2b5b55c0987f989359510ca3))
+
 ## [2.4.0](https://github.com/cfngc4594/agent-notify/compare/v2.3.1...v2.4.0) (2026-01-29)
 
 
