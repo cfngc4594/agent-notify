@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1](https://github.com/cfngc4594/agent-notify/compare/v2.5.0...v2.5.1) (2026-01-31)
+
+
+### Bug Fixes
+
+* **codex:** insert notify config before sections to ensure global scope ([e0c9db9](https://github.com/cfngc4594/agent-notify/commit/e0c9db9c1fbd5bbe7dcc56d374889d5e262a95e9))
+
 ## [2.5.0](https://github.com/cfngc4594/agent-notify/compare/v2.4.0...v2.5.0) (2026-01-31)
 
 
