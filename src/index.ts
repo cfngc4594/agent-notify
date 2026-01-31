@@ -28,9 +28,11 @@ import { formatFileDiff } from "./utils/diff";
 import { ensureDir, writeExecutable } from "./utils/fs";
 import { toDisplayPath, toAbsolutePath } from "./utils/path";
 import { selectSoundWithPreview } from "./utils/sound-select";
-import { configureShell, getManualConfig } from "./utils/shell-config";
+import { configureShell, getManualConfig, getShellConfigPath } from "./utils/shell-config";
+import { backupFiles, type BackupResult } from "./utils/backup";
 import { setLocale, t } from "./i18n";
 import type { SoundName, Platform } from "./types";
+import { SETTINGS_FILE, CURSOR_HOOKS_FILE, CODEX_CONFIG_FILE } from "./config/constants";
 
 const DEFAULT_BIN_DIR = join(homedir(), ".bin");
 
@@ -422,6 +424,29 @@ async function main() {
   let claudeConfigUpdated = false;
   let cursorConfigUpdated = false;
   let codexConfigUpdated = false;
+  let backupResult: BackupResult | null = null;
+
+  // Backup all selected platform configs (simple approach: always backup if file exists)
+  if (enableClaudeCode || enableCursor || enableCodex || enableCli) {
+    spinner.start(t("backingUpConfigs"));
+
+    const filesToBackup: string[] = [];
+    if (enableClaudeCode) filesToBackup.push(SETTINGS_FILE);
+    if (enableCursor) filesToBackup.push(CURSOR_HOOKS_FILE);
+    if (enableCodex) filesToBackup.push(CODEX_CONFIG_FILE);
+    if (enableCli) {
+      const shellConfigPath = await getShellConfigPath();
+      if (shellConfigPath) filesToBackup.push(shellConfigPath);
+    }
+
+    backupResult = await backupFiles(filesToBackup);
+
+    if (backupResult.backups.length > 0) {
+      spinner.stop(t("backupComplete")(backupResult.backups.length));
+    } else {
+      spinner.stop(t("backupNone"));
+    }
+  }
 
   if (shouldUpdateClaude && claudeUpdatedSettings) {
     spinner.start(t("updatingSettings"));
@@ -445,10 +470,22 @@ async function main() {
   }
 
   // 6. Show results
-  const resultLines: string[] = [
+  const resultLines: string[] = [];
+
+  // Show backup info first (if any backups were made)
+  if (backupResult && backupResult.backups.length > 0) {
+    resultLines.push(
+      pc.yellow(`⚠ ${t("backupCreated")}`),
+      ...backupResult.backups.map(b => `  ${pc.dim("•")} ${b.displayPath}`),
+      pc.dim(`  ${t("backupRestoreHint")}`),
+      ""
+    );
+  }
+
+  resultLines.push(
     pc.green(t("installedScripts")),
     ...installedScripts,
-  ];
+  );
 
   // Claude Code hooks info
   if (claudeConfigUpdated) {

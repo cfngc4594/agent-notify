@@ -156,3 +156,46 @@ export function getManualConfig(binDir: string, notifyPath: string): string[] {
     `notify() { "${notifyPath}" "$?"; }`,
   ];
 }
+
+/**
+ * Get the shell config file path that would be modified
+ * Returns null if shell is unsupported
+ */
+export async function getShellConfigPath(): Promise<string | null> {
+  const shellType = getShellType();
+
+  switch (shellType) {
+    case "zsh": {
+      return join(HOME, ".zshrc");
+    }
+    case "bash": {
+      const bashrc = join(HOME, ".bashrc");
+      const bashProfile = join(HOME, ".bash_profile");
+
+      // Check which one exists
+      try {
+        const file = Bun.file(bashrc);
+        if (await file.exists()) {
+          return bashrc;
+        }
+      } catch {
+        // Continue
+      }
+
+      try {
+        const file = Bun.file(bashProfile);
+        if (await file.exists()) {
+          return bashProfile;
+        }
+      } catch {
+        // Continue
+      }
+
+      // Default to .bashrc
+      return bashrc;
+    }
+    default:
+      return null;
+  }
+}
+

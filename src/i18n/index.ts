@@ -156,6 +156,13 @@ const messages = {
     cliShellConfigured: (config: string) => `Added notify function to "${config}"`,
     cliPathAdded: (binDir: string, config: string) => `Added "${binDir}" to $PATH in "${config}"`,
     cliShellManualHint: "Manually add the following to your shell config (e.g. ~/.bashrc):",
+
+    // Backup
+    backingUpConfigs: "Backing up config files...",
+    backupComplete: (count: number) => `Backed up ${count} config file(s)`,
+    backupNone: "No existing config files to backup",
+    backupCreated: "Backup created:",
+    backupRestoreHint: "To restore, rename .bak file to remove the .bak extension",
   },
   zh: {
     // Main flow
@@ -312,6 +319,13 @@ const messages = {
     cliShellConfigured: (config: string) => `已添加 notify 函数到 "${config}"`,
     cliPathAdded: (binDir: string, config: string) => `已添加 "${binDir}" 到 $PATH (${config})`,
     cliShellManualHint: "请手动添加以下内容到你的 shell 配置 (如 ~/.bashrc):",
+
+    // Backup
+    backingUpConfigs: "备份配置文件...",
+    backupComplete: (count: number) => `已备份 ${count} 个配置文件`,
+    backupNone: "没有需要备份的配置文件",
+    backupCreated: "已创建备份:",
+    backupRestoreHint: "如需恢复，将 .bak 文件重命名去掉 .bak 后缀即可",
   },
 } as const;
 

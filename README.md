@@ -64,6 +64,8 @@ All platforms are **automatically configured** by the installer:
 
 The installer shows a **diff preview** before applying changes, so you can review exactly what will be modified. Your existing configuration is preserved.
 
+**Automatic backup:** Before modifying any config file, the installer creates a timestamped backup (e.g., `settings.json.20250131-143022.bak`) in the same directory. If something goes wrong, simply rename the `.bak` file to restore.
+
 > **Note:** Since each platform supports different hook events, only the "task completion" hook is configured for consistency across all platforms.
 
 ### Using Both Claude Code and Cursor
