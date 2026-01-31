@@ -9,6 +9,7 @@ import { mkdir, rm } from "node:fs/promises";
 describe("Codex config generation logic", () => {
   /**
    * Simulate the generateCodexConfigContent logic for testing
+   * Updated to insert notify BEFORE any [section] to ensure it's global
    */
   function generateContent(existingContent: string, scriptPath: string): string {
     const notifyLine = `notify = ["bash", "${scriptPath}"]`;
@@ -17,14 +18,38 @@ describe("Codex config generation logic", () => {
       return `# Codex configuration\n# https://github.com/openai/codex\n\n${notifyLine}\n`;
     }
 
+    // Check if global notify already exists (before any [section])
+    const lines = existingContent.split("\n");
+    const firstSectionIndex = lines.findIndex(line => /^\s*\[/.test(line));
+    
+    // Check for existing global notify (before first section or in whole file if no sections)
+    const globalPart = firstSectionIndex === -1 
+      ? existingContent 
+      : lines.slice(0, firstSectionIndex).join("\n");
+    
     const notifyRegex = /^notify\s*=\s*\[.*\]\s*$/m;
+    const hasGlobalNotify = notifyRegex.test(globalPart);
 
-    if (notifyRegex.test(existingContent)) {
-      return existingContent.replace(notifyRegex, notifyLine);
+    if (hasGlobalNotify) {
+      // Replace existing global notify line
+      const beforeSection = globalPart.replace(notifyRegex, notifyLine);
+      if (firstSectionIndex === -1) {
+        return beforeSection;
+      }
+      return beforeSection + "\n" + lines.slice(firstSectionIndex).join("\n");
     }
 
-    const trimmed = existingContent.trimEnd();
-    return `${trimmed}\n\n${notifyLine}\n`;
+    // Insert notify BEFORE any [section] to ensure it's global
+    if (firstSectionIndex === -1) {
+      // No sections, safe to append
+      const trimmed = existingContent.trimEnd();
+      return `${trimmed}\n\n${notifyLine}\n`;
+    }
+
+    // Insert before the first section
+    const beforeSection = lines.slice(0, firstSectionIndex).join("\n").trimEnd();
+    const afterSection = lines.slice(firstSectionIndex).join("\n");
+    return `${beforeSection}\n\n${notifyLine}\n\n${afterSection}`;
   }
 
   describe("empty or non-existent config", () => {
@@ -44,7 +69,7 @@ describe("Codex config generation logic", () => {
   });
 
   describe("existing config without notify", () => {
-    test("appends notify to existing config", () => {
+    test("appends notify to existing config without sections", () => {
       const existing = `# My config
 model = "gpt-4"
 temperature = 0.7`;
@@ -56,11 +81,60 @@ temperature = 0.7`;
       expect(result).toContain("model = \"gpt-4\"");
       expect(result).toContain("temperature = 0.7");
       
-      // Should add notify at the end
+      // Should add notify at the end (no sections, so append is safe)
       expect(result).toContain("notify = [\"bash\", \"/path/to/script.sh\"]");
     });
 
-    test("preserves complex existing config", () => {
+    test("inserts notify BEFORE sections to ensure it is global", () => {
+      const existing = `# Codex configuration
+[general]
+model = "gpt-4"
+max_tokens = 4096
+
+[safety]
+allowed_tools = ["read", "write", "shell"]`;
+      
+      const result = generateContent(existing, "/path/to/script.sh");
+      
+      // Should preserve ALL sections
+      expect(result).toContain("[general]");
+      expect(result).toContain("model = \"gpt-4\"");
+      expect(result).toContain("[safety]");
+      
+      // notify should appear BEFORE [general]
+      const notifyIndex = result.indexOf("notify =");
+      const generalIndex = result.indexOf("[general]");
+      expect(notifyIndex).toBeLessThan(generalIndex);
+    });
+
+    test("inserts notify before [projects.xxx] sections (user bug scenario)", () => {
+      // This is the exact scenario reported by user
+      const existing = `model = "gpt-5.2-codex"
+model_reasoning_effort = "medium"
+
+[projects."/Users/zzzz/Documents/pin-board"]
+trust_level = "trusted"
+
+[projects."/Users/zzzz/Documents/kb-agent"]
+trust_level = "trusted"
+
+[projects."/Users/zzzz/Documents/saas-heartopian-schema"]
+trust_level = "trusted"`;
+      
+      const result = generateContent(existing, "/Users/zzzz/.local/bin/codex-notify.sh");
+      
+      // notify should be BEFORE any [projects.xxx] section
+      const notifyIndex = result.indexOf("notify =");
+      const firstProjectIndex = result.indexOf("[projects.");
+      expect(notifyIndex).toBeLessThan(firstProjectIndex);
+      
+      // Should preserve all projects
+      expect(result).toContain('[projects."/Users/zzzz/Documents/pin-board"]');
+      expect(result).toContain('[projects."/Users/zzzz/Documents/kb-agent"]');
+      expect(result).toContain('[projects."/Users/zzzz/Documents/saas-heartopian-schema"]');
+    });
+
+    test("preserves complex existing config with sections", () => {
       const existing = `# Codex configuration
 [general]
 model = "gpt-4"
